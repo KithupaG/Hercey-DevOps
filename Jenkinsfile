@@ -28,7 +28,7 @@ pipeline {
                     echo "Executing zero-downtime deployment using JBOSS CLI"
                     sh """
                         ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
-                        "${JBOSS_CLI} --connect --command='deploy --controller=192.168.56.100:9990 --force /tmp/\$(basename ${WAR_PATH})'"
+                        "${JBOSS_CLI} --connect --controller=192.168.56.100:9990 --command='deploy --force /tmp/\$(basename ${WAR_PATH})'"
                     """
 
                     echo "Delete the WAR file from the VM after deployment"
