@@ -1,0 +1,166 @@
+.noUi-target {
+    height: 9px;
+}
+
+.noUi-connect {
+    background: repeating-linear-gradient(to right, rgb(199, 209, 185), rgb(199, 209, 185), rgb(199, 209, 185)) !important;
+}
+
+.noUi-horizontal .noUi-handle {
+    width: 18px;
+    height: 18px;
+    top: -5px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+.noUi-handle:before,
+.noUi-handle:after {
+    display: none;
+}
+
+
+
+.accordion-button {
+    position: relative;
+    background-color: white !important;
+    color: #3a3c40;
+    z-index: 1;
+    overflow: hidden;
+    transition: color 0.2s ease;
+}
+
+.accordion-button:focus {
+    box-shadow: none !important;
+    border-color: transparent !important;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: transparent !important;
+    color: #ffffff;
+    box-shadow: none;
+}
+
+
+.accordion-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(105, 129, 47, 0.58);
+    filter: saturate(2);
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    z-index: -1;
+}
+
+/* 5. Smoothly Fade In the Background */
+.accordion-button:not(.collapsed)::before {
+    opacity: 1;
+}
+
+/* 6. Smooth Icon Transition */
+.accordion-button::after {
+    transition: filter 0.5s ease-in-out, transform 0.3s ease;
+    z-index: 2;
+}
+
+.accordion-button:not(.collapsed)::after {
+    filter: brightness(1) sepia(1) hue-rotate(80deg) saturate(3);
+}
+
+
+input[type="checkbox"] {
+    accent-color: #d2ecb3; /* Replace with your specific red hex code */
+}
+
+/*  pagination  */
+
+    /*  active page number  */
+.pagination .page-item.active .page-link {
+    background-color: rgba(105, 129, 47, 0.58);
+    border-color: rgba(255, 255, 255, 0);
+    color: #ffffff;
+    box-shadow: none;
+}
+
+.pagination .page-link{
+    color: #252729;
+}
+
+    /*  page number hover  */
+.pagination .page-link:hover{
+    background-color: rgba(243, 231, 121, 0.06);
+    border-color: rgba(243, 231, 121, 0.06);
+    box-shadow: none;
+}
+
+.pagination .page-link:focus{
+    background-color: rgba(255, 255, 255, 0);
+    border-color: rgba(159, 159, 159, 0.35);
+    box-shadow: none;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+}
+/*  pagination end */
+
+::selection {
+    background-color: rgba(139, 195, 74, 0.35); /* Your Green Color */
+    color: #000000; /* Changes text to white for better contrast */
+}
+
+/* Fallback for Firefox */
+::-moz-selection {
+    background-color: #8BC34AFF;
+    color: #ffffff;
+}
+
+
+/* 1. Change the checkbox color when checked */
+.form-check-input:checked {
+    background-color: rgba(105, 129, 47, 0.58) !important;
+    border-color: #8bc34a !important;
+}
+
+/* 2. Change the focus ring (outline) color when clicked */
+.form-check-input:focus {
+    border-color: #8bc34a;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(139, 195, 74, 0.25) !important;
+}
+
+/* 3. Optional: Change color of the "indeterminate" state */
+.form-check-input:indeterminate {
+    background-color: #8bc34a !important;
+    border-color: #8bc34a !important;
+}
+
+.custom-card-img-shop {
+    height: 240px;
+    object-fit: cover;
+    object-position: center;
+}
+
+@media (max-width: 768px) {
+    .custom-card-img-shop { height: 180px; }
+}
+
+@media (max-width: 576px) {
+    .product-container .card-body { padding: 0.75rem; }
+    .product-container .card-body .h5 { font-size: 0.95rem; }
+}
+
+@media (max-width: 991.98px) {
+    .shop-toolbar { flex-direction: column; gap: 0.75rem; }
+    .shop-toolbar > div { width: 100%; }
+    .shop-toolbar .d-flex { width: 100%; }
+    .shop-toolbar #search-input { flex: 1; }
+    .shop-toolbar #st-sort { min-width: unset !important; }
+}

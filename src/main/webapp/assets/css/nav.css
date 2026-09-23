@@ -1,0 +1,138 @@
+body {
+    font-family: 'Rubik', sans-serif;
+}
+
+.brand-logo {
+    background-image: url("../images/Hercey_Brand_logo.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: left center;
+    width: 120px; /* Slightly smaller for mobile safety */
+    height: 40px;
+    display: block;
+}
+
+/* Make logo bigger on desktop */
+@media (min-width: 992px) {
+    .brand-logo {
+        width: 200px;
+        height: 70px;
+    }
+}
+
+.nlink {
+    font-size: 16px;
+    color: #1a1d20;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.nlink:hover {
+    color: #8BC34A;
+    text-decoration: underline;
+}
+
+.price {
+    font-weight: 500;
+    font-size: 14px; /* Slightly smaller font for mobile price */
+    white-space: nowrap;
+}
+
+.kart-icon {
+    background-image: url("../icons/bag.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    width: 30px; /* Adjusted for mobile fit */
+    height: 30px;
+    cursor: pointer;
+}
+
+.profile-icon {
+    background-image: url("../icons/person-fill.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    width: 37px; /* Adjusted for mobile fit */
+    height: 36px;
+    cursor: pointer;
+}
+
+/*Footer*/
+/* --- Global Reset and Footer Background --- */
+.site-footer {
+    background-color: #f8f8f8; /* Light gray background */
+    color: #333; /* Default text color */
+    font-family: Arial, sans-serif; /* Use a common readable font */
+}
+
+.footer-bottom {
+    border-top: 1px solid #e0e0e0;
+}
+
+/* --- Feature Icons Section --- */
+#footer-features p {
+    font-size: 0.85rem;
+    color: #6c757d !important; /* Muted color for descriptions */
+}
+
+/* Note: You must replace 'path/to/iconX.png' with actual images/SVGs and size them. */
+.footer-icon {
+    width: 40px;
+    height: 40px;
+}
+
+/* --- Main Links Section --- */
+.footer-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.footer-links li {
+    margin-bottom: 0.5rem;
+}
+
+.footer-links a {
+    color: #6c757d; /* Muted color for links */
+    text-decoration: none; /* Remove underline */
+    font-size: 0.95rem;
+}
+
+.footer-links a:hover {
+    color: #8bc34a; /* Hover effect */
+}
+
+/* --- Download App Badges --- */
+.app-badge-img {
+    width: 150px; /* Adjust size as needed */
+    height: auto;
+}
+
+/* --- Footer Bottom Styling (Socials & Payments) --- */
+.social-icons a {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin-right: 0.8rem;
+    transition: color 0.2s;
+}
+
+.social-icons a:hover {
+    color: #000;
+}
+
+.payment-icons {
+    font-size: 1.5rem;
+}
+.scroll-to-top-btn {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 45px;
+    height: 45px;
+    border-radius: 10%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+    z-index: 1000;
+}

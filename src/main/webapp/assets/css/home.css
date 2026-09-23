@@ -1,0 +1,197 @@
+@font-face {
+    font-family: 'Rubik';
+    src: url("../fonts/Rubik/Rubik-VariableFont_wght.ttf");
+    font-weight: normal;
+    font-style: normal;
+}
+
+.hero-bg {
+    position: relative;
+    background-color: #FBFAF8;
+    height: 500px;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.hero-bg::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+
+    background-image: url("../images/pattern2.jpeg");
+    background-size: calc(400px);
+    background-repeat: repeat;
+    background-position: center;
+
+    /* Increase saturation here - 2.5 makes it very vivid */
+    filter: blur(0px) saturate(120%);
+
+    transform: scaleX(-1);
+    z-index: -2;
+}
+.hero-bg::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: repeating-linear-gradient(to right, rgb(255, 255, 255), rgba(255, 255, 255, 1)35%, rgba(255, 255, 255, 0));
+    z-index: -1;
+}
+
+.hero-leaf {
+    background-image: url("../images/leaf.png");
+    background-position: right;
+    background-repeat: no-repeat;
+    background-size: contain;
+    height: 80px;
+    width: 100px;
+}
+
+.custom-green-glow {
+    box-shadow: 0 1px 10px rgb(162, 188, 113) !important;
+    transform: translateY(-8px);
+    transition: all 0.3s ease-in-out; /* Smooths the movement */
+}
+
+
+
+
+
+
+
+
+
+
+.gallery-wrapper {
+    position: relative;
+    padding: 0 40px;
+}
+
+.gallery-wrapper::before,
+.gallery-wrapper::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 35%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.gallery-wrapper::before {
+    left: 0;
+    background: linear-gradient(to right, white, transparent);
+}
+
+.gallery-wrapper::after {
+    right: 0;
+    background: linear-gradient(to left, white, transparent);
+}
+
+.tea-slider {
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden; /* Hide the extra cards */
+    scroll-behavior: smooth;
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.tea-card-item {
+    min-width: 300px;
+    width: 300px;
+    height: 500px;
+    transition: transform 0.3s ease;
+}
+
+.tea-card-item .card {
+    height: 100%;
+}
+
+.tea-card-item img {
+    height: 280px;
+    object-fit: cover;
+}
+
+@media (max-width: 768px) {
+    .hero-bg { height: auto; min-height: 350px; }
+    .hero-bg h1 { font-size: 40px !important; }
+    .hero-bg h2 { font-size: 28px !important; }
+    .hero-bg .fs-5 { font-size: 1rem !important; }
+    .custom-card-img { height: 200px; }
+}
+
+@media (max-width: 576px) {
+    .hero-bg h1 { font-size: 32px !important; }
+    .hero-bg h2 { font-size: 22px !important; }
+    .gallery-wrapper { padding: 0 10px; }
+    .hero-leaf { height: 60px; width: 80px; }
+}
+
+/* Custom Navigation Styling */
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #2c3e50;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    z-index: 10;
+    cursor: pointer;
+}
+
+.nav-btn.prev { left: 0; }
+.nav-btn.next { right: 0; }
+.nav-btn:hover { background: #445a70; }
+
+::selection {
+    background-color: rgba(139, 195, 74, 0.35); /* Your Green Color */
+    color: #000000; /* Changes text to white for better contrast */
+}
+
+/* Fallback for Firefox */
+::-moz-selection {
+    background-color: #8BC34AFF;
+    color: #ffffff;
+}
+
+
+
+
+
+
+
+.custom-card-img {
+    height: 280px;
+    object-fit: cover;
+    object-position: center;
+}
+
+.product-card-hover {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.product-card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+}
+
+.border-dark-subtle {
+    border-color: rgba(0, 0, 0, 0.175) !important;
+}
+
+
+
+
+
+
+
+
+
+

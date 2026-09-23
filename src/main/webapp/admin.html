@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="assets/icons/favicon.ico" type="image/x-ico" rel="icon">
+    <link href="assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/admin.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+<body>
+
+<div class="container py-5">
+
+    <div class="row g-4">
+
+        <!--Admin sidebar nav -->
+        <div class="col-md-3">
+            <div class="list-group shadow-sm">
+
+                <a href="#" class="list-group-item menu-link active-nav" data-target="dashboard">
+                    <i class="bi bi-speedometer2 me-4"></i>
+                    Dashboard
+                </a>
+
+                <a href="#" class="list-group-item menu-link" data-target="sellerApplications">
+                    <i class="bi bi-shop-window me-4"></i>
+                    Seller Applications
+                </a>
+
+                <a href="#" class="list-group-item menu-link" data-target="productApprovals">
+                    <i class="bi bi-check2-square me-4"></i>
+                    Product Approvals
+                </a>
+
+                <a href="#" class="list-group-item menu-link" data-target="manageUsers">
+                    <i class="bi bi-people-fill me-4"></i>
+                    Manage Users
+                </a>
+
+                <a href="#" class="list-group-item menu-link" data-target="manageProducts">
+                    <i class="bi bi-box-seam-fill me-4"></i>
+                    Manage Products
+                </a>
+
+                <a class="list-group-item" onclick="signOut()" style="cursor: pointer;">
+                    <i class="bi bi-box-arrow-left me-4"></i>
+                    Logout
+                </a>
+
+            </div>
+        </div>
+        <!--Admin sidebar nav END -->
+
+
+        <!--DASHBOARD section-->
+        <div class="col-md-9 content-section" id="dashboard">
+
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-3">
+                    <div class="card stat-card shadow-sm p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon">
+                                <i class="bi bi-shop-window"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold" id="stat-sellers">0</h5>
+                                <small class="text-muted">Pending Sellers</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card stat-card shadow-sm p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold" id="stat-products">0</h5>
+                                <small class="text-muted">Pending Products</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card stat-card shadow-sm p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold" id="stat-users">0</h5>
+                                <small class="text-muted">Total Users</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card stat-card shadow-sm p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon">
+                                <i class="bi bi-boxes"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold" id="stat-all-products">0</h5>
+                                <small class="text-muted">Total Products</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="card shadow-sm p-4 content-card">
+                <h5 class="mb-3">Recent Activity</h5>
+                <div class="table-responsive">
+                    <table class="table admin-table">
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>User / Seller</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-activity-body">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">No recent activity</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+        <!--DASHBOARD section END-->
+
+
+        <!--SELLER APPLICATIONS section-->
+        <div class="col-md-9 d-none content-section" id="sellerApplications">
+            <div class="card shadow-sm p-4 content-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Seller Applications</h5>
+                    <input type="text" class="form-control w-auto" placeholder="Search..." id="sellerSearch"
+                           oninput="filterTable('seller-applications-body', this.value)" style="border-radius: 0;">
+                </div>
+                <div class="toolbar">
+                    <button class="btn btn-approve" id="sellerApproveBtn" disabled onclick="batchApproveSellers()">Approve</button>
+                    <button class="btn btn-reactivate" id="sellerReactivateBtn" disabled onclick="batchReactivateSellers()">Reactivate</button>
+                    <span class="sel-count" id="sellerSelCount">0 selected</span>
+                    <span class="toolbar-divider"></span>
+                    <button class="btn btn-outline-secondary" onclick="exportReport('sellers')">Export Report</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table admin-table">
+                        <thead>
+                            <tr>
+                                <th><input class="form-check-input" type="checkbox" id="sellerSelectAll" onchange="toggleSelectAll('seller-applications-body', this)"></th>
+                                <th>#</th>
+                                <th>Company Name</th>
+                                <th>Email</th>
+                                <th>Mobile</th>
+                                <th>City</th>
+                                <th>Applied On</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="seller-applications-body">
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">No seller applications found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!--SELLER APPLICATIONS section END-->
+
+
+        <!--PRODUCT APPROVALS section-->
+        <div class="col-md-9 d-none content-section" id="productApprovals">
+            <div class="card shadow-sm p-4 content-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Product Approvals</h5>
+                    <input type="text" class="form-control w-auto" placeholder="Search..." id="productApprovalSearch"
+                           oninput="filterTable('product-approvals-body', this.value)" style="border-radius: 0;">
+                </div>
+                <div class="toolbar">
+                    <button class="btn btn-approve" id="prodApprovalApproveBtn" disabled onclick="batchApproveProducts()">Approve</button>
+                    <button class="btn btn-reject" id="prodApprovalReactivateBtn" disabled onclick="batchReactivateApprovalProducts()">Remove</button>
+                    <span class="sel-count" id="prodApprovalSelCount">0 selected</span>
+                    <span class="toolbar-divider"></span>
+                    <button class="btn btn-outline-secondary" onclick="exportReport('product-approvals')">Export Report</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table admin-table">
+                        <thead>
+                            <tr>
+                                <th><input class="form-check-input" type="checkbox" id="prodApprovalSelectAll" onchange="toggleSelectAll('product-approvals-body', this)"></th>
+                                <th>#</th>
+                                <th>Product</th>
+                                <th>Seller</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Submitted On</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-approvals-body">
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">No products found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!--PRODUCT APPROVALS section END-->
+
+
+        <!--MANAGE USERS section-->
+        <div class="col-md-9 d-none content-section" id="manageUsers">
+            <div class="card shadow-sm p-4 content-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Manage Users</h5>
+                    <input type="text" class="form-control w-auto" placeholder="Search users..." id="userSearch"
+                           oninput="filterTable('manage-users-body', this.value)" style="border-radius: 0;">
+                </div>
+                <div class="toolbar">
+                    <button class="btn btn-outline-secondary" id="userBlockBtn" disabled onclick="batchBlockUsers()">Block</button>
+                    <button class="btn btn-reject" id="userRemoveBtn" disabled onclick="batchRemoveUsers()">Deactivate</button>
+                    <button class="btn btn-reactivate" id="userReactivateBtn" disabled onclick="batchReactivateUsers()">Reactivate</button>
+                    <span class="sel-count" id="userSelCount">0 selected</span>
+                    <span class="toolbar-divider"></span>
+                    <button class="btn btn-outline-secondary" onclick="exportReport('users')">Export Report</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table admin-table">
+                        <thead>
+                            <tr>
+                                <th><input class="form-check-input" type="checkbox" id="userSelectAll" onchange="toggleSelectAll('manage-users-body', this)"></th>
+                                <th>#</th>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Mobile</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manage-users-body">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">No users found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!--MANAGE USERS section END-->
+
+
+        <!--MANAGE PRODUCTS section-->
+        <div class="col-md-9 d-none content-section" id="manageProducts">
+            <div class="card shadow-sm p-4 content-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Manage Products</h5>
+                    <input type="text" class="form-control w-auto" placeholder="Search products..." id="productSearch"
+                           oninput="filterTable('manage-products-body', this.value)" style="border-radius: 0;">
+                </div>
+                <div class="toolbar">
+                    <button class="btn btn-reject" id="prodRemoveBtn" disabled onclick="batchRemoveProducts()">Remove</button>
+                    <button class="btn btn-reactivate" id="prodReactivateBtn" disabled onclick="batchReactivateProducts()">Reactivate</button>
+                    <span class="sel-count" id="prodSelCount">0 selected</span>
+                    <span class="toolbar-divider"></span>
+                    <button class="btn btn-outline-secondary" onclick="exportReport('products')">Export Report</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table admin-table">
+                        <thead>
+                            <tr>
+                                <th><input class="form-check-input" type="checkbox" id="prodSelectAll" onchange="toggleSelectAll('manage-products-body', this)"></th>
+                                <th>#</th>
+                                <th>Product</th>
+                                <th>Seller</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manage-products-body">
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">No products found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!--MANAGE PRODUCTS section END-->
+
+    </div>
+</div>
+
+<script src="assets/js/admin.js"></script>
+<script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notiflix-aio-3.2.8.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account</title>
+    <link href="assets/icons/favicon.ico" type="image/x-ico" rel="icon">
+    <link href="assets/css/nav.css" rel="stylesheet">
+    <link href="assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/my_account.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+
+        <!--NAVBAR-->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 sticky-top shadow">
+            <div class="container-fluid px-2 px-md-5">
+
+                <a class="navbar-brand brand-logo" href="index.html"></a>
+
+                <div class="d-flex align-items-center order-lg-last">
+
+                    <div class="d-flex align-items-center flex-column me-2 me-md-4">
+
+                        <div class="kart-icon position-relative" data-bs-toggle="offcanvas" href="#cart" role="button"
+                             aria-controls="cart" style="cursor: pointer;">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  id="shop-icon-badge"></span>
+                        </div>
+
+                        <div class="price me-2" id="nav-cart-price">000.00</div>
+
+                    </div>
+
+                    <div class="dropdown">
+                        <div class="profile-icon me-3 me-lg-0" data-bs-toggle="dropdown" aria-expanded="false"></div>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="my_account.html">My Account</a></li>
+                            <li><a class="dropdown-item" href="#">Wholesale</a></li>
+                            <li><a class="dropdown-item" href="#">Customer Support</a></li>
+                            <li><a class="dropdown-item" href="#">Contact Us</a></li>
+                            <li><a class="dropdown-item" href="#">B2B</a></li>
+                            <li class="px-3">
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" style="color: #ff3c3c" onclick="signOut()">Log Out</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                        aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarContent">
+
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-3 align-items-center mt-3 mt-lg-0">
+                        <li class="nav-item"><a class="nlink" href="#">About</a></li>
+                        <li class="nav-item"><a class="nlink" href="shop.html">Shop</a></li>
+                        <li class="nav-item"><a class="nlink" href="#">Contact</a></li>
+                        <li class="nav-item"><a class="nlink text-center" href="#">All Categories</a></li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+        <!--NAVBAR-->
+
+        <!--Pagination-->
+        <div class="col-md-12 d-flex justify-content-between px-5 bc">
+            <div class="col-1 d-none d-lg-block"></div>
+
+            <div class="col-10 bc d-flex justify-content-start align-items-center px-4">
+                <a href="index.html" class="link-dark text-decoration-none me-3">Home</a>
+                <a href="#" class="link-dark text-decoration-none me-3 active">My Account</a>
+            </div>
+
+            <div class="col-1 d-none d-lg-block"></div>
+        </div>
+        <!--Pagination end-->
+    </div>
+</div>
+
+
+<div class="container py-5">
+
+    <!--Welcome user-->
+    <div class="user-greeting d-flex align-items-center mb-4">
+        <div>
+            <h4 class="mb-0"><span id="username">Nimuthu Paranawithana</span></h4>
+            <p class="text-muted mb-0" id="since">Hercey member Since November 2025</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!--Account nav list -->
+        <div class="col-md-3">
+            <div class="list-group user-sidebar shadow-sm">
+
+                <a href="#" class="list-group-item menu-link active-nav" id="account-anchor"
+                   data-target="accountDetails">
+                    <i class="bi bi-person-fill me-4"></i>
+                    Account Details
+                </a>
+
+                <a href="#" class="list-group-item menu-link" id="seller-anchor"
+                   data-target="sellerDetails">
+                    <i class="bi bi-shop-window me-4"></i>
+                    Seller
+                </a>
+
+                <a href="#" class="list-group-item menu-link" id="product-anchor" data-target="products">
+                    <i class="bi bi-leaf-fill me-4"></i>
+                    Add products
+                </a>
+
+                <a href="#" class="list-group-item menu-link" data-target="productListing">
+                    <i class="bi bi-list-ul me-4"></i>
+                    Product Listing
+                </a>
+
+                <a href="#" class="list-group-item menu-link" id="shipments-anchor" data-target="shipments">
+                    <i class="bi bi-truck me-4"></i>
+                    Shipments
+                </a>
+
+                <a href="#" class="list-group-item menu-link" data-target="Orders">
+                    <i class="bi bi-bag-fill me-4"></i>
+                    Orders
+                </a>
+
+                <a href="#" class="list-group-item menu-link " id="address-anchor" data-target="Addresses">
+                    <i class="bi bi-house-fill me-4"></i>
+                    Addresses
+                </a>
+
+                <a class="list-group-item" onclick="signOut()">
+                    <i class="bi bi-box-arrow-left me-4"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+        <!--Account nav list END -->
+
+
+        <!--NEW Product section-->
+        <div class="col-md-9 d-none content-section" id="products">
+            <div class="card shadow-sm p-4">
+                <h5 class="mb-4">Add New Product</h5>
+                <form>
+
+
+                    <div class="mb-4 form-floating">
+                        <input type="text" class="form-control" id="productTitle" placeholder="">
+                        <label for="productTitle" class="form-label">Product Title</label>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6 form-floating">
+                            <select id="CategorySelect" class="form-select">
+                                <option>Select</option>
+                                <option>Category A</option>
+                                <option>Category B</option>
+                            </select>
+                            <label for="CategorySelect" class="form-label">Category</label>
+                        </div>
+                        <div class="col-md-6 form-floating">
+                            <input type="number" class="form-control" id="unitPrice" placeholder="">
+                            <label for="unitPrice" class="form-label">Unit price</label>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6 form-floating">
+                            <input type="number" class="form-control" id="stock" placeholder="">
+                            <label for="stock" class="form-label">Available stock</label>
+                        </div>
+                        <div class="col-md-6 form-floating">
+                            <input type="number" class="form-control" id="discount" placeholder="">
+                            <label for="discount" class="form-label">Discount</label>
+                        </div>
+                    </div>
+
+                    <label class="mb-2">Package dimensions</label>
+                    <div class="mb-4 row row-cols-2 row-cols-md-4 g-3">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="height" placeholder="height">
+                            <label class="form-label" for="height">Height</label>
+                        </div>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="width" placeholder="height">
+                            <label class="form-label" for="width">Width</label>
+                        </div>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="length" placeholder="height">
+                            <label class="form-label" for="length">Length</label>
+                        </div>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="weight" placeholder="height">
+                            <label class="form-label" for="weight">Weigh</label>
+                        </div>
+                    </div>
+
+                    <label class="mb-2">MFD / EPD</label>
+                    <div class="mb-4 row row-cols-2 g-3">
+                        <div class="form-floating">
+                            <input type="date" class="form-control" id="mfd" placeholder="Manufactured Date">
+                            <label class="form-label" for="mfd">Manufactured Date</label>
+                        </div>
+                        <div class="form-floating">
+                            <input type="date" class="form-control" id="epd" placeholder="Expiration Date">
+                            <label class="form-label" for="epd">Expiration Date</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="editor" class="form-label">Description</label>
+                        <div id="editor">
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <span class="h5">Upload product images</span>
+                    </div>
+                    <div class="mb-4 row g-3">
+                        <div class="mb-3 col-6 col-md-3">
+                            <div class="bg-body-secondary mb-2 imageDiv flex-column" id="image1div">
+                                <i class="bi bi-upload fs-4 text-secondary"></i>
+                                <span>primary image</span>
+                            </div>
+                            <input class="form-control" type="file" id="image1">
+                        </div>
+
+                        <div class="mb-3 col-6 col-md-3">
+                            <div class="bg-body-secondary mb-2 imageDiv flex-column" id="image2div">
+                                <i class="bi bi-upload fs-4 text-secondary"></i>
+                                <span>image 2</span>
+                            </div>
+                            <input class="form-control" type="file" id="image2">
+                        </div>
+
+                        <div class="mb-3 col-6 col-md-3">
+                            <div class="bg-body-secondary mb-2 imageDiv flex-column" id="image3div">
+                                <i class="bi bi-upload fs-4 text-secondary"></i>
+                                <span>image 3</span>
+                            </div>
+                            <input class="form-control" type="file" id="image3">
+                        </div>
+
+                        <div class="mb-3 col-6 col-md-3">
+                            <div class="bg-body-secondary mb-2 imageDiv flex-column" id="image4div">
+                                <i class="bi bi-upload fs-4 text-secondary"></i>
+                                <span>image 4</span>
+                            </div>
+                            <input class="form-control" type="file" id="image4">
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn" onclick="addProduct()"
+                            style="background-color: #8bc34a; color: white; font-weight: normal">Add Product
+                    </button>
+                </form>
+            </div>
+        </div>
+        <!--NEW Product section END-->
+
+        <!--Seller Account section-->
+        <div class="col-md-9 d-none content-section" id="sellerDetails">
+            <div class="card shadow-sm p-4">
+                <h5 class="mb-4">Seller Account</h5>
+                <form class="d-none d-flex align-items-center justify-content-center flex-column py-5"
+                      id="noSellerAccount"
+                      style="min-height: 190px;">
+                    <h3 class="text-center">Register a seller account</h3>
+                    <button type="button" class="btn"
+                            style="background-color: #8bc34a; color: white; font-size: medium"
+                            onclick="toggleNAtoApply()">Register
+                    </button>
+                </form>
+                <form class="d-none" id="sellerAccountApply" style="min-height: 190px;">
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 form-floating">
+                            <input type="text" id="sellerEmail" placeholder="Company Email" class="form-control">
+                            <label for="sellerEmail" class="form-label">Company Email</label>
+                        </div>
+
+                        <div class="col-md-6 form-floating">
+                            <input type="text" id="companyName" placeholder="Company Name" class="form-control">
+                            <label for="companyName" class="form-label">Company Name</label>
+                        </div>
+
+                        <div class="col-md-6 form-floating">
+                            <input type="text" id="companyMobile" placeholder="Company Mobile" class="form-control">
+                            <label for="companyMobile" class="form-label">Company Mobile</label>
+                        </div>
+                        <label>Shop Address Location</label>
+                        <div class="col-md-6 form-floating">
+                            <input type="text" id="shopLineOne" placeholder="Address line 1" class="form-control">
+                            <label for="shopLineOne" class="form-label">Address line 1</label>
+                        </div>
+
+                        <div class="col-md-6 form-floating">
+                            <input type="text" id="shopLineTwo" placeholder="Address line 2" class="form-control">
+                            <label for="shopLineTwo" class="form-label">Address line 2</label>
+                        </div>
+
+                        <div class="col-md-6 form-floating">
+                            <input type="text" id="shopPostalCode" placeholder="Postal code" class="form-control">
+                            <label for="shopPostalCode" class="form-label">Postal code</label>
+                        </div>
+
+                        <div class="col-md-6 form-floating">
+                            <select id="shopCitySelect" class="form-select">
+                                <option value="0">Select</option>
+                            </select>
+                            <label for="shopCitySelect" class="form-label">City</label>
+                        </div>
+                    </div>
+                    <button type="button" class="btn"
+                            style="background-color: #8bc34a; color: white; font-size: medium"
+                            onclick="applyForSeller();">Apply for seller
+                    </button>
+                    <button type="button" class="btn btn-dark" onclick="toggleNAtoApply()">Cancel
+                    </button>
+                </form>
+                <div class="d-none d-flex align-items-center justify-content-center" id="sellerPending"
+                     style="min-height: 190px;">
+                    <span>your seller account in under admin review. check back later</span>
+                </div>
+                <form class="d-none" id="sellerAccount" style="min-height: 190px;">
+                    <p>seller since : <span id="sellerSince"></span></p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 form-floating">
+                            <input type="text" id="sellerEmail2" placeholder="Company Email" class="form-control">
+                            <label for="sellerEmail" class="form-label">Company Email</label>
+                        </div>
+
+                        <div class="col-md-6 form-floating">
+                            <input type="text" id="companyName2" placeholder="Company Name" class="form-control">
+                            <label for="companyName" class="form-label">Company Name</label>
+                        </div>
+
+                        <div class="col-md-6 form-floating">
+                            <input type="text" id="companyMobile2" placeholder="Company Mobile" class="form-control">
+                            <label for="companyMobile" class="form-label">Company Mobile</label>
+                        </div>
+                        <div class="col-md-6 form-floating">
+                            <input type="text" id="shopLineOne2" placeholder="Address line 1" class="form-control">
+                            <label for="shopLineOne2" class="form-label">Address line 1</label>
+                        </div>
+
+                        <div class="col-md-6 form-floating">
+                            <input type="text" id="shopLineTwo2" placeholder="Address line 2" class="form-control">
+                            <label for="shopLineTwo2" class="form-label">Address line 2</label>
+                        </div>
+
+                        <div class="col-md-6 form-floating">
+                            <input type="text" id="shopPostalCode2" placeholder="Postal code" class="form-control">
+                            <label for="shopPostalCode2" class="form-label">Postal code</label>
+                        </div>
+
+                        <div class="col-md-6 form-floating">
+                            <select id="shopCitySelect2" class="form-select">
+                                <option value="0">Select</option>
+                            </select>
+                            <label for="shopCitySelect2" class="form-label">City</label>
+                        </div>
+                        <div class="col-12">
+                            <button type="button"
+                                    class="btn"
+                                    style="background-color: #8bc34a; color: white;"
+                                    onclick="updateSeller()">
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!--Seller Account section END-->
+
+        <!--User Data-->
+        <div class="col-md-9 content-section" id="accountDetails">
+            <div class="card shadow-sm p-4">
+                <h5 class="mb-4">Account Details</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6 form-floating">
+                        <input type="text" id="firstName" placeholder="First Name" class="form-control">
+                        <label for="firstName" class="form-label">First Name</label>
+                    </div>
+
+                    <div class="col-md-6 form-floating">
+                        <input type="text" id="lastName" placeholder="Last Name" class="form-control">
+                        <label for="lastName" class="form-label">Last Name</label>
+                    </div>
+
+                    <div class="col-md-6 form-floating">
+                        <input type="text" id="lineOne" placeholder="Address line 1" class="form-control">
+                        <label for="lineOne" class="form-label">Address line 1</label>
+                    </div>
+
+                    <div class="col-md-6 form-floating">
+                        <input type="text" id="lineTwo" placeholder="Address line 2" class="form-control">
+                        <label for="lineTwo" class="form-label">Address line 2</label>
+                    </div>
+
+                    <div class="col-md-6 form-floating">
+                        <input type="text" id="postalCode" placeholder="Postal code" class="form-control">
+                        <label for="postalCode" class="form-label">Postal code</label>
+                    </div>
+
+                    <div class="col-md-6 form-floating">
+                        <select id="citySelect" class="form-select">
+                            <option value="0">Select</option>
+                        </select>
+                        <label for="citySelect" class="form-label">City</label>
+                    </div>
+                    <div class="col-12 form-floating">
+                        <input type="text" id="mobile" placeholder="mobile" class="form-control">
+                        <label for="mobile" class="form-label">Mobile</label>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn" onclick="saveChanges();"
+                                style="background-color: #8bc34a; color: white; font-size: medium">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+                <h5 class="mb-4">Change password</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-12 form-floating position-relative mb-3">
+                        <input type="password" id="currentPassword" placeholder="currentPassword"
+                               class="form-control">
+                        <label for="currentPassword" class="form-label">Current password</label>
+                        <i class="bi bi-eye-slash password-toggle-icon"
+                           onclick="togglePassword('currentPassword', this)"></i>
+                    </div>
+
+                    <div class="col-md-6 form-floating position-relative mb-3">
+                        <input type="password" id="newPassword" placeholder="newPassword"
+                               class="form-control">
+                        <label for="newPassword" class="form-label">New password</label>
+                        <i class="bi bi-eye-slash password-toggle-icon"
+                           onclick="togglePassword('newPassword', this)"></i>
+                    </div>
+
+                    <div class="col-md-6 form-floating position-relative mb-3">
+                        <input type="password" id="confirmPassword" placeholder="confirmPassword"
+                               class="form-control">
+                        <label for="confirmPassword" class="form-label">Confirm password</label>
+                        <i class="bi bi-eye-slash password-toggle-icon"
+                           onclick="togglePassword('confirmPassword', this)"></i>
+                    </div>
+
+                    <div class="col-12">
+                        <button class="btn" style="background-color: #8bc34a; color: white; font-size: medium"
+                                onclick="updatePassword();">
+                            Update Password
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--User Data End-->
+
+        <div class="col-md-9 d-none content-section" id="productListing">
+            <div class="card shadow-sm p-4">
+                <h5 class="mb-4">Product Listing</h5>
+                <div id="sellerProductsContainer"></div>
+            </div>
+        </div>
+
+        <div class="col-md-9 d-none content-section" id="shipments">
+            <div class="card shadow-sm p-4">
+                <h5 class="mb-4">Shipments</h5>
+                <div id="shipmentsContainer"></div>
+            </div>
+        </div>
+
+        <div class="col-md-9 d-none content-section" id="Orders">
+            <div class="card shadow-sm p-4">
+                <h5 class="mb-4">Orders</h5>
+                <p>Order history content goes here.</p>
+            </div>
+        </div>
+
+        <div class="col-md-9 d-none content-section" id="Addresses">
+            <div class="card shadow-sm p-4">
+                <div class="col-12 d-flex justify-content-between align-items-center">
+                    <h5 class="m-0">Addresses <br><span class="fs-6 fw-normal">Current shipping addresses under : <span
+                            id="addName">Name</span></span></h5>
+                </div>
+                <hr class="col-12 mb-3 mt-2">
+                <span class="fw-bold mb-4" style="color: #27272b">Select a primary address</span>
+                <form id="addressList">
+
+                    <!--Them addresses load here -->
+
+                </form>
+                <span> <span class="fw-bold" style="color: #8bc34a">+ To add a new address</span> <br> save a new address in your profile and save changes </span>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!--Off Canvasser-->
+<div class="offcanvas offcanvas-end rounded-start-4" tabindex="-1" id="cart"
+     aria-labelledby="cart-label" style="max-width: 500px; width: 100%;">
+
+    <div class="offcanvas-header border border-top-0 border-end-0 border-start-0 mt-3">
+        <h5 class="offcanvas-title fw-bold" id="cart-label">Cart</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+
+    <div class="offcanvas-body" id="cart-content">
+
+    </div>
+
+    <div class="offcanvas-footer p-3 border-top bg-light">
+        <div class="d-flex justify-content-between mb-3">
+            <span class="h5">Subtotal</span>
+            <span class="h5 fw-bold" id="order-total-amount">LKR 0.00</span>
+        </div>
+        <div class="d-flex justify-content-between mb-3">
+            <span class="h5">Total items</span>
+            <span class="h5 fw-bold" id="order-total-quantity">0</span>
+        </div>
+        <div class="d-grid gap-2">
+            <button class="btn btn-lg" id="checkout-btn" style="background-color:#A2BC71FF; color: white ">Checkout</button>
+            <button class="btn btn-outline-dark" data-bs-dismiss="offcanvas">Continue Shopping</button>
+        </div>
+    </div>
+</div>
+<!--Off Canvasser-->
+
+<!--Footer yo-->
+<footer class="site-footer">
+    <div class="container pt-5">
+        <div class="row text-center gx-3 gx-md-5" id="footer-features">
+            <div class="col-6 col-md-3 mb-4">
+                <h6>Fast & Secure Delivery</h6>
+                <p class="text-muted">Tell about your service.</p>
+            </div>
+            <div class="col-6 col-md-3 mb-4">
+                <h6>Money-Back Guarantee</h6>
+                <p class="text-muted">Within 10 days.</p>
+            </div>
+            <div class="col-6 col-md-3 mb-4">
+                <h6>24 Hour Return Policy</h6>
+                <p class="text-muted">No question ask.</p>
+            </div>
+            <div class="col-6 col-md-3 mb-4">
+                <h6>Pro Quality Support</h6>
+                <p class="text-muted">24/7 Live support.</p>
+            </div>
+        </div>
+
+        <hr class="mb-5">
+
+        <div class="row d-flex justify-content-center">
+
+            <div class="col-md-3 mb-4 text-center">
+                <h5 class="footer-title">Support</h5>
+                <ul class="list-unstyled footer-links">
+                    <li>
+                        <a href="">
+                            <i class="bi bi-envelope-fill me-2"></i>
+                            support@hercey.lk
+                        </a>
+                    </li>
+                    <li>
+                        <a href="">
+                            <i class="bi bi-telephone-fill me-2"></i>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            Phone Number
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+
+            <div class="col-md-3 mb-4 text-center">
+                <h5 class="footer-title">Account</h5>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="#">My Account</a></li>
+                    <li><a href="#">Login / Register</a></li>
+                    <li><a href="#">Cart</a></li>
+                    <li><a href="#">Wishlist</a></li>
+                    <li><a href="#">Shop</a></li>
+                </ul>
+            </div>
+
+            <div class="col-md-3 mb-4 text-center">
+                <h5 class="footer-title">Quick Link</h5>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms Of Use</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bottom py-3">
+        <div class="container d-flex justify-content-between align-items-center flex-wrap">
+            <div class="d-flex align-items-center flex-wrap">
+                <div class="social-icons me-4">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+                <p class="mb-0 text-muted">©2025. All rights reserved by Hercey.</p>
+            </div>
+
+            <div class="d-flex align-items-center">
+                <span class="me-2 text-muted">Accept For</span>
+                <div class="payment-icons">
+                    <i class="fab fa-cc-visa"></i>
+                    <i class="fab fa-cc-mastercard"></i>
+                </div>
+            </div>
+
+            <button class="btn scroll-to-top-btn" style="background-color: #8bc34a"
+                    onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                <i class="bi bi-arrow-up fw-bolder text-white"></i>
+            </button>
+        </div>
+    </div>
+</footer>
+
+<script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notiflix-aio-3.2.8.min.js"></script>
+<script src="assets/js/my_account.js"></script>
+<script src="assets/js/cart.js"></script>
+<script src="assets/js/header.js"></script>
+<script src="assets/js/notification.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script>
+    const quill = new Quill('#editor', {
+        theme: 'snow'
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+.address-scroll-container {
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #dadada #ffffff;
+}
+
+#addressSection {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 1;
+}
+
+#addressSection.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+}

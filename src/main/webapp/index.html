@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hercey</title>
+    <link href="assets/icons/favicon.ico" type="image/x-ico" rel="icon">
+    <link href="assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/home.css" rel="stylesheet">
+    <link href="assets/css/nav.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+
+        <!--NAVBAR-->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 sticky-top shadow">
+            <div class="container-fluid px-2 px-md-5">
+
+                <a class="navbar-brand brand-logo" href="index.html"></a>
+
+                <div class="d-flex align-items-center order-lg-last">
+
+                    <div class="d-flex align-items-center flex-column me-2 me-md-4">
+
+                        <div class="kart-icon position-relative" data-bs-toggle="offcanvas" href="#cart" role="button"
+                             aria-controls="cart" style="cursor: pointer;">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  id="shop-icon-badge"></span>
+                        </div>
+
+                        <div class="price me-2" id="nav-cart-price">000.00</div>
+
+                    </div>
+
+                    <div class="dropdown">
+                        <div class="profile-icon me-3 me-lg-0" data-bs-toggle="dropdown" aria-expanded="false"></div>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="my_account.html">My Account</a></li>
+                            <li><a class="dropdown-item" href="#">Wholesale</a></li>
+                            <li><a class="dropdown-item" href="#">Customer Support</a></li>
+                            <li><a class="dropdown-item" href="#">Contact Us</a></li>
+                            <li><a class="dropdown-item" href="#">B2B</a></li>
+                            <li class="px-3">
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" style="color: #ff3c3c" onclick="signOut()">Log Out</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                        aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarContent">
+
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-3 align-items-center mt-3 mt-lg-0">
+                        <li class="nav-item"><a class="nlink" href="#">About</a></li>
+                        <li class="nav-item"><a class="nlink" href="shop.html">Shop</a></li>
+                        <li class="nav-item"><a class="nlink" href="#">Contact</a></li>
+                        <li class="nav-item"><a class="nlink text-center" href="#">All Categories</a></li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+        <!--NAVBAR-->
+
+
+        <div class="col-12 hero-bg d-flex justify-content-center shadow   mb-5">
+
+
+            <div class="col-11 col-md-5 col-lg-4  d-flex flex-column justify-content-center py-5">
+                <div class="hero-leaf py-3"></div>
+                <span class="m-0 fs-5" style="font-family: Constantia; font-weight: bold; ">Best Quality Products</span>
+                <h1 class="m-0" style="font-family: Constantia; font-weight: bold; font-size: 70px">HERCEY</h1>
+                <h2 style="font-family: 'Ebrima'; font-weight:normal; font-size: 50px">Organic tea and herbal</h2>
+                <span class="mb-5 d-none d-sm-block">
+                    Organic tea and herbal product <br>
+                    sourced locally from producers and tea shop around the country
+                    ensuring the best quality
+                </span>
+                <div>
+                    <button class="btn fw-medium text-white" style="background-color: #a2bc71">shop now</button>
+                </div>
+            </div>
+            <div class="col-1 col-md-3 col-lg-6 hero-image h-100"></div>
+        </div>
+
+        <div class="col-10 offset-1 d-flex justify-content-center">
+            <div class="col-12 mt-4">
+
+                <div class="col-6 offset-3">
+                    <hr class="m-0 mb-2">
+                    <h2 class="text-center my-0" style="font-family: Constantia">Categories</h2>
+                    <hr class="m-o mt-2">
+                </div>
+
+                <div id="category-container" class="d-flex flex-wrap justify-content-center gap-4">
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mt-5">
+
+                <div class="col-6 offset-3">
+                    <hr class="m-0">
+                    <h2 class="text-center" style="font-family: Constantia">Tea Gallery</h2>
+                    <hr class="m-0">
+                </div>
+
+                <div class="container-fluid p-0">
+                    <div class="gallery-wrapper px-2">
+                        <button class="me-5 nav-btn prev" onclick="moveSlide(-1)">&#10094;</button>
+                        <button class="nav-btn next" onclick="moveSlide(1)">&#10095;</button>
+                        <div class="tea-slider" id="teaSlider">
+
+
+                        </div>
+                    </div>
+                </div>
+
+        </div>
+
+        <div class="col-12 d-flex justify-content-center mb-5">
+            <div class="col-10 mt-5">
+                <div class="col-6 offset-3 mb-5">
+                    <hr class="m-0">
+                    <h2 class="text-center" style="font-family: Constantia">Fresh Offers</h2>
+                    <hr class="m-0">
+                </div>
+
+                <div class="container p-0">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-5 justify-content-center fresh-offers-container"
+                         id="fresh-offers-container">
+
+                        <!-- latest 8 products load here-->
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 d-flex justify-content-center mb-5">
+            <a href="shop.html">
+                <button class="btn btn-lg btn-outline-dark">Show More</button>
+            </a>
+        </div>
+
+        <!--Off Canvasser-->
+        <div class="offcanvas offcanvas-end rounded-start-4" tabindex="-1" id="cart"
+             aria-labelledby="cart-label" style="max-width: 500px; width: 100%;">
+
+            <div class="offcanvas-header border border-top-0 border-end-0 border-start-0 mt-3">
+                <h5 class="offcanvas-title fw-bold" id="cart-label">Cart</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+
+            <div class="offcanvas-body" id="cart-content">
+
+            </div>
+
+            <div class="offcanvas-footer p-3 border-top bg-light">
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="h5">Subtotal</span>
+                    <span class="h5 fw-bold" id="order-total-amount"></span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="h5">Total items</span>
+                    <span class="h5 fw-bold" id="order-total-quantity"></span>
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-lg w-100" id="checkout-btn" style="background-color:#A2BC71FF; color: white ">Checkout</button>
+                    <button class="btn btn-outline-dark" data-bs-dismiss="offcanvas">Continue Shopping</button>
+                </div>
+            </div>
+        </div>
+        <!--Off Canvasser-->
+
+        <!--Footer Start-->
+        <footer class="site-footer">
+            <div class="container pt-5">
+                <div class="container row text-center gx-3 gx-md-5" id="footer-features">
+                    <div class="col-6 col-md-3 mb-4">
+                        <h6>Fast & Secure Delivery</h6>
+                        <p class="text-muted">Tell about your service.</p>
+                    </div>
+                    <div class="col-6 col-md-3 mb-4">
+                        <h6>Money-Back Guarantee</h6>
+                        <p class="text-muted">Within 10 days.</p>
+                    </div>
+                    <div class="col-6 col-md-3 mb-4">
+                        <h6>24 Hour Return Policy</h6>
+                        <p class="text-muted">No question ask.</p>
+                    </div>
+                    <div class="col-6 col-md-3 mb-4">
+                        <h6>Pro Quality Support</h6>
+                        <p class="text-muted">24/7 Live support.</p>
+                    </div>
+                </div>
+
+                <hr class="mb-5">
+
+                <div class="row d-flex justify-content-center">
+
+                    <div class="col-md-3 mb-4 text-center">
+                        <h5 class="footer-title">Support</h5>
+                        <ul class="list-unstyled footer-links">
+                            <li>
+                                <a href="">
+                                    <i class="bi bi-envelope-fill me-2"></i>
+                                    support@hercey.lk
+                                </a>
+                            </li>
+                            <li>
+                                <a href="">
+                                    <i class="bi bi-telephone-fill me-2"></i>
+                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    Phone Number
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+
+                    <div class="col-md-3 mb-4 text-center">
+                        <h5 class="footer-title">Account</h5>
+                        <ul class="list-unstyled footer-links">
+                            <li><a href="#">My Account</a></li>
+                            <li><a href="#">Login / Register</a></li>
+                            <li><a href="#">Cart</a></li>
+                            <li><a href="#">Wishlist</a></li>
+                            <li><a href="#">Shop</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="col-md-3 mb-4 text-center">
+                        <h5 class="footer-title">Quick Link</h5>
+                        <ul class="list-unstyled footer-links">
+                            <li><a href="#">Privacy Policy</a></li>
+                            <li><a href="#">Terms Of Use</a></li>
+                            <li><a href="#">FAQ</a></li>
+                            <li><a href="#">Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom py-3">
+                <div class="container d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="d-flex align-items-center flex-wrap">
+                        <div class="social-icons me-4">
+                            <a href="#"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#"><i class="fab fa-twitter"></i></a>
+                            <a href="#"><i class="fab fa-instagram"></i></a>
+                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                        <p class="mb-0 text-muted">©2025. All rights reserved by Hercey.</p>
+                    </div>
+
+                    <div class="d-flex align-items-center">
+                        <span class="me-2 text-muted">Accept For</span>
+                        <div class="payment-icons">
+                            <i class="fab fa-cc-visa"></i>
+                            <i class="fab fa-cc-mastercard"></i>
+                        </div>
+                    </div>
+
+                    <button class="btn scroll-to-top-btn" style="background-color: #8bc34a"
+                            onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                        <i class="bi bi-arrow-up fw-bolder text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </footer>
+        <!--Footer End-->
+    </div>
+</div>
+
+<script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notiflix-aio-3.2.8.min.js"></script>
+<script src="assets/js/header.js"></script>
+<script src="assets/js/index.js"></script>
+<script src="assets/js/cart.js"></script>
+</body>
+</html>

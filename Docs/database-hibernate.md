@@ -1,0 +1,392 @@
+# Hercey Database Documentation (Hibernate ORM)
+
+## Overview
+This document explains the relational database schema generated and used by Hibernate ORM in the Hercey application.
+
+- ORM: Hibernate (JPA annotations)
+- DB engine: MySQL
+- JDBC driver: `com.mysql.cj.jdbc.Driver`
+- Dialect: `org.hibernate.dialect.MySQLDialect`
+- DDL mode: `hibernate.hbm2ddl.auto=update`
+
+> Source files used: `src/main/resources/hibernate.cfg.xml` and entity classes in `src/main/java/com/hercey/entity/`.
+
+## 1) Hibernate Configuration Summary
+From `src/main/resources/hibernate.cfg.xml`:
+
+- Database URL points to schema: `hercey`
+- Hibernate auto-updates tables (`update`) instead of dropping/recreating
+- SQL logging is enabled (`hibernate.show_sql=true`)
+- Explicit mapped entities are listed in the config
+
+Mapped classes:
+- `User`, `Address`, `Status`, `BaseEntity`
+- `Cart`, `City`, `Order`, `Product`, `Seller`, `Stock`
+- `DeliveryType`, `Discount`, `OrderItem`, `Category`, `Admin`
+
+Not mapped in `hibernate.cfg.xml` (even though entity exists in code):
+- `PreparationState`
+
+## 2) Shared Base Columns
+`BaseEntity` is a mapped superclass inherited by multiple entities.
+
+Columns added to inheriting tables:
+- `created_at` (`DATETIME(0)`, not nullable, non-updatable)
+- `updated_at` (`DATETIME`, not nullable)
+
+Used by:
+- `users`
+- `admin`
+- `product`
+- `stock`
+- `seller`
+- `orders`
+
+## 3) Entity-to-Table Mapping
+
+### 3.1 `users` (`User`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `first_name` (required)
+- `last_name` (required)
+- `mobile` (length 10, required)
+- `email` (required)
+- `password` (required)
+- `verification_code` (required)
+- `status_id` (FK -> `status.id`, required)
+- `created_at`, `updated_at` (from `BaseEntity`)
+
+Relations:
+- Many users -> one status (`ManyToOne`)
+- One user -> many addresses (`OneToMany` by `Address.user`)
+- One user -> many cart rows (`OneToMany` by `Cart.user`)
+
+Named query:
+- `User.getByEmail`
+
+---
+
+### 3.2 `admin` (`Admin`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `first_name` (required)
+- `last_name` (required)
+- `email` (required, unique)
+- `password` (required)
+- `mobile` (length 10, required)
+- `status_id` (FK -> `status.id`, required)
+- `created_at`, `updated_at` (from `BaseEntity`)
+
+Relations:
+- Many admins -> one status (`ManyToOne`)
+
+Named query:
+- `Admin.getByEmail`
+
+---
+
+### 3.3 `status` (`Status`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `value` (length 45, required, unique)
+
+Used as reference/status lookup by:
+- `users.status_id`
+- `admin.status_id`
+- `seller.status_id`
+- `stock.status_id`
+- `orders.status_id`
+- `order_items.status_id`
+
+Named query:
+- `Status.findByValue`
+
+Enum values in code (`Status.Type`):
+- `ACTIVE`, `DEACTIVATE`, `PENDING`, `INACTIVE`, `BLOCKED`
+- `DELIVERED`, `PACKING`, `APPROVED`, `REJECTED`, `CANCELLED`
+- `VERIFIED`, `RECEIVED`, `COMPLETED`
+
+---
+
+### 3.4 `city` (`City`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `name` (length 50, required)
+
+Used by:
+- `address.city_id`
+
+---
+
+### 3.5 `address` (`Address`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `line_one` (length 45, required)
+- `line_two` (length 45, optional)
+- `postal_code` (length 10, optional)
+- `city_id` (FK -> `city.id`)
+- `user_id` (FK -> `users.id`)
+- `is_primary` (required boolean)
+
+Relations:
+- Many addresses -> one city (`ManyToOne`)
+- Many addresses -> one user (`ManyToOne`)
+
+Named query:
+- `Address.getPrimary`
+
+---
+
+### 3.6 `category` (`Category`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `name` (required)
+- `icon` (mapped from field `path`, optional)
+
+Relations:
+- One category -> many products (`OneToMany`)
+
+---
+
+### 3.7 `seller` (`Seller`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `company_name` (length 200, required)
+- `company_mobile` (length 10, required)
+- `company_email` (length 100, required)
+- `status_id` (FK -> `status.id`)
+- `user_id` (FK -> `users.id`)
+- `address_id` (FK -> `address.id`)
+- `created_at`, `updated_at` (from `BaseEntity`)
+
+Relations:
+- Many sellers -> one status (`ManyToOne`)
+- One seller -> one user (`OneToOne`)
+- One seller -> one address (`OneToOne`)
+- One seller -> many products (`OneToMany`)
+
+---
+
+### 3.8 `product` (`Product`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `title` (length 200, required)
+- `description` (TEXT, required)
+- `weight` (required)
+- `length` (required)
+- `width` (required)
+- `height` (required)
+- `seller_id` (FK -> `seller.id`)
+- `category_id` (FK -> `category.id`)
+- `created_at`, `updated_at` (from `BaseEntity`)
+
+Relations:
+- Many products -> one seller (`ManyToOne`)
+- Many products -> one category (`ManyToOne`)
+- One product -> many stock rows (`OneToMany`)
+
+Element collection table:
+- `product_images`
+  - `pr_id` (FK -> `product.id`)
+  - image path/value column (generated by Hibernate for `List<String> images`)
+
+---
+
+### 3.9 `discount` (`Discount`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `coupon_code` (length 45, required)
+- `value` (required)
+- `started_at` (required)
+- `expiered_at` (required; note spelling in DB column is `expiered_at`)
+
+Used by:
+- `stock.discount_id`
+
+Named query:
+- `Discount.findDefault`
+
+---
+
+### 3.10 `stock` (`Stock`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `product_id` (FK -> `product.id`)
+- `price` (required)
+- `quantity` (required)
+- `manufactured_date`
+- `expiry_date`
+- `discount_id` (FK -> `discount.id`)
+- `status_id` (FK -> `status.id`)
+- `created_at`, `updated_at` (from `BaseEntity`)
+
+Relations:
+- Many stock rows -> one product (`ManyToOne`)
+- Many stock rows -> one discount (`ManyToOne`)
+- Many stock rows -> one status (`ManyToOne`)
+
+---
+
+### 3.11 `cart` (`Cart`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `qty` (required)
+- `user_id` (FK -> `users.id`)
+- `stock_id` (FK -> `stock.id`)
+
+Relations:
+- Many cart rows -> one user (`ManyToOne`)
+- Many cart rows -> one stock (`ManyToOne`)
+
+---
+
+### 3.12 `delivery_types` (`DeliveryType`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `name` (length 50, required)
+- `price` (required)
+
+Used by:
+- `orders.delivery_types_id`
+
+Named query:
+- `DeliveryType.findByName`
+
+Enum display values expected by code:
+- `Within City`
+- `Out of City`
+
+---
+
+### 3.13 `orders` (`Order`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `delivery_types_id` (FK -> `delivery_types.id`)
+- `status_id` (FK -> `status.id`)
+- `users_id` (FK -> `users.id`)
+- `created_at`, `updated_at` (from `BaseEntity`)
+
+Relations:
+- Many orders -> one delivery type (`ManyToOne`)
+- Many orders -> one status (`ManyToOne`)
+- Many orders -> one user (`ManyToOne`)
+- One order -> many order items (`OneToMany`)
+
+---
+
+### 3.14 `order_items` (`OrderItem`)
+Primary key:
+- `id` (auto-increment)
+
+Columns:
+- `quantity` (required)
+- `rating` (required)
+- `stocks_id` (FK -> `stock.id`, required)
+- `orders_id` (FK -> `orders.id`, required)
+- `seller_id` (FK -> `seller.id`)
+- `status_id` (FK -> `status.id`)
+
+Relations:
+- Many order items -> one stock (`ManyToOne`)
+- Many order items -> one order (`ManyToOne`)
+- Many order items -> one seller (`ManyToOne`)
+- Many order items -> one status (`ManyToOne`)
+
+## 4) High-Level Relationship Diagram
+
+```text
+status (1) <----- (N) users
+status (1) <----- (N) admin
+status (1) <----- (N) seller
+status (1) <----- (N) stock
+status (1) <----- (N) orders
+status (1) <----- (N) order_items
+
+city (1) <------- (N) address ------- (N) ------> (1) users
+
+users (1) <------ (N) cart --------- (N) -------> (1) stock
+
+category (1) <--- (N) product ------ (N) -------> (1) seller
+product (1) <---- (N) stock
+product (1) <---- (N) product_images (element collection)
+
+delivery_types (1) <--- (N) orders
+users (1) <----------- (N) orders
+orders (1) <---------- (N) order_items
+stock (1) <----------- (N) order_items
+seller (1) <---------- (N) order_items
+
+users (1) <-------- (1) seller
+address (1) <------ (1) seller
+```
+
+## 5) Seed and Reference Data
+SQL files available in `src/main/resources/sql/`:
+
+- `admin_seed.sql`
+  - Ensures `ACTIVE` exists in `status`
+  - Inserts/updates default admin user in `admin`
+- `category_icon_seed.sql`
+  - Updates category icon paths in `category.icon`
+
+Application logic also assumes specific reference rows exist:
+- `status` values such as `PENDING`, `APPROVED`, `VERIFIED`, `INACTIVE`, `COMPLETED`, etc.
+- `delivery_types.name` values exactly matching:
+  - `Within City`
+  - `Out of City`
+
+## 6) Operational Notes
+- `hibernate.hbm2ddl.auto=update` is convenient for development but can drift over time; schema migration tooling is recommended for production.
+- Several associations use `CascadeType.ALL` on `ManyToOne` relations (for example in `Order`, `OrderItem`, `Stock`, `Product`, `Seller`). Be careful during deletes/updates to avoid unintended parent writes.
+- `PreparationState` exists as an entity class but is not mapped in `hibernate.cfg.xml`, so Hibernate will not manage/create that table unless mapping is added.
+- Sensitive DB credentials are currently in `hibernate.cfg.xml`; move them to environment-based configuration before production deployment.
+
+## 7) Source of Truth
+Primary mapping and schema sources:
+
+- `src/main/resources/hibernate.cfg.xml`
+- `src/main/java/com/hercey/entity/BaseEntity.java`
+- `src/main/java/com/hercey/entity/User.java`
+- `src/main/java/com/hercey/entity/Admin.java`
+- `src/main/java/com/hercey/entity/Status.java`
+- `src/main/java/com/hercey/entity/City.java`
+- `src/main/java/com/hercey/entity/Address.java`
+- `src/main/java/com/hercey/entity/Category.java`
+- `src/main/java/com/hercey/entity/Seller.java`
+- `src/main/java/com/hercey/entity/Product.java`
+- `src/main/java/com/hercey/entity/Discount.java`
+- `src/main/java/com/hercey/entity/Stock.java`
+- `src/main/java/com/hercey/entity/Cart.java`
+- `src/main/java/com/hercey/entity/DeliveryType.java`
+- `src/main/java/com/hercey/entity/Order.java`
+- `src/main/java/com/hercey/entity/OrderItem.java`
+- `src/main/java/com/hercey/entity/PreparationState.java`
+- `src/main/resources/sql/admin_seed.sql`
+- `src/main/resources/sql/category_icon_seed.sql`
+

@@ -1,0 +1,176 @@
+.imageDiv {
+    height: 200px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+/* Hide the icon by default IF the div has an image */
+.imageDiv.has-image i {
+    display: none;
+}
+
+/* Show the icon (trash) only when hovering over a div that has an image */
+.imageDiv.has-image:hover i {
+    display: block;
+    z-index: 10;
+}
+
+/* Optional: Darken the image slightly on hover to make the red trash icon pop */
+.imageDiv.has-image:hover {
+    box-shadow: inset 0 0 0 1000px rgba(255,255,255,0.5);
+}
+
+/* Hide the actual file input from view */
+input[type="file"] {
+    display: none;
+}
+
+
+.bc{
+    background-color: #ededed;
+    height: 35px;
+}
+
+
+.list-group-item.active-nav {
+    background-color: #8bc34a;
+    color: white;
+    font-weight: bold;
+    border-color: #8bc34a;
+}
+
+.list-group-item:not(.active-nav):hover {
+    background-color: #f8f9fa;
+}
+
+
+/*   Password hide|show toggle   */
+.password-toggle-icon {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 10;
+    color: #6c757d;
+}
+
+.form-floating input {
+    padding-right: 40px;
+}
+/*   Password hide|show toggle end   */
+
+
+
+
+
+
+
+
+/* --- Global Reset and Footer Background --- */
+.site-footer {
+    background-color: #f8f8f8; /* Light gray background */
+    color: #333; /* Default text color */
+    font-family: Arial, sans-serif; /* Use a common readable font */
+}
+
+.footer-bottom {
+    border-top: 1px solid #e0e0e0;
+}
+
+/* --- Feature Icons Section --- */
+#footer-features p {
+    font-size: 0.85rem;
+    color: #6c757d !important; /* Muted color for descriptions */
+}
+
+/* Note: You must replace 'path/to/iconX.png' with actual images/SVGs and size them. */
+.footer-icon {
+    width: 40px;
+    height: 40px;
+}
+
+/* --- Main Links Section --- */
+.footer-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.footer-links li {
+    margin-bottom: 0.5rem;
+}
+
+.footer-links a {
+    color: #6c757d; /* Muted color for links */
+    text-decoration: none; /* Remove underline */
+    font-size: 0.95rem;
+}
+
+.footer-links a:hover {
+    color: #8bc34a; /* Hover effect */
+}
+
+/* --- Download App Badges --- */
+.app-badge-img {
+    width: 150px; /* Adjust size as needed */
+    height: auto;
+}
+
+/* --- Footer Bottom Styling (Socials & Payments) --- */
+.social-icons a {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin-right: 0.8rem;
+    transition: color 0.2s;
+}
+
+.social-icons a:hover {
+    color: #000;
+}
+
+.payment-icons {
+    font-size: 1.5rem; /* For Font Awesome payment icons */
+}
+
+/* --- Scroll to Top Button --- */
+.scroll-to-top-btn {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 45px;
+    height: 45px;
+    border-radius: 10%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+    z-index: 1000;
+}
+
+.ql-toolbar.ql-snow {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+/* Round the bottom corners of the text editor */
+.ql-container.ql-snow {
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+::selection {
+    background-color: rgba(139, 195, 74, 0.35); /* Your Green Color */
+    color: #000000; /* Changes text to white for better contrast */
+}
+
+/* Fallback for Firefox */
+::-moz-selection {
+    background-color: #8BC34AFF;
+    color: #ffffff;
+}

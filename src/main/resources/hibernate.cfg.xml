@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+    "-//Hibernate/Hibernate Configuration DTD//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+  <session-factory>
+      <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+      <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+      <property name="hibernate.connection.url">jdbc:mysql://192.168.56.101:3306/hercey?useSSL=false&amp;allowPublicKeyRetrieval=true</property>
+      <property name="hibernate.connection.username">root</property>
+      <property name="hibernate.connection.password">24629</property>
+      <property name="hibernate.hbm2ddl.auto">update</property>
+      <property name="hibernate.show_sql">true</property>
+      <property name="hibernate.cache.use_second_level_cache">false</property>
+
+      <mapping class="com.hercey.entity.User"/>
+      <mapping class="com.hercey.entity.Address"/>
+      <mapping class="com.hercey.entity.Status"/>
+      <mapping class="com.hercey.entity.BaseEntity"/>
+      <mapping class="com.hercey.entity.Cart"/>
+      <mapping class="com.hercey.entity.City"/>
+      <mapping class="com.hercey.entity.Order"/>
+      <mapping class="com.hercey.entity.Product"/>
+      <mapping class="com.hercey.entity.Seller"/>
+      <mapping class="com.hercey.entity.Stock"/>
+      <mapping class="com.hercey.entity.DeliveryType"/>
+      <mapping class="com.hercey.entity.Discount"/>
+      <mapping class="com.hercey.entity.OrderItem"/>
+      <mapping class="com.hercey.entity.Category"/>
+      <mapping class="com.hercey.entity.Admin"/>
+
+  </session-factory>
+</hibernate-configuration>

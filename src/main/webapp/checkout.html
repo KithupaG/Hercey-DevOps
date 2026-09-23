@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>checkout</title>
+    <link href="assets/icons/favicon.ico" type="image/x-ico" rel="icon">
+    <link href="assets/css/nav.css" rel="stylesheet">
+    <link href="assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="assets/css/checkout.css" rel="stylesheet">
+</head>
+<body>
+<!--NAVBAR-->
+<nav class="navbar navbar-expand-lg navbar-light bg-white py-3 sticky-top shadow">
+    <div class="container-fluid px-2 px-md-5">
+
+        <a class="navbar-brand brand-logo" href="index.html"></a>
+
+        <div class="d-flex align-items-center order-lg-last">
+
+            <div class="d-flex align-items-center flex-column me-2 me-md-4">
+
+                <div class="kart-icon position-relative" data-bs-toggle="offcanvas" href="#cart" role="button"
+                     aria-controls="cart" style="cursor: pointer;">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  id="shop-icon-badge"></span>
+                </div>
+
+                <div class="price me-2" id="nav-cart-price">00.00</div>
+
+            </div>
+
+            <div class="dropdown">
+                <div class="profile-icon me-3 me-lg-0" data-bs-toggle="dropdown" aria-expanded="false"></div>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="my_account.html">My Account</a></li>
+                    <li><a class="dropdown-item" href="#">Wholesale</a></li>
+                    <li><a class="dropdown-item" href="#">Customer Support</a></li>
+                    <li><a class="dropdown-item" href="#">Contact Us</a></li>
+                    <li><a class="dropdown-item" href="#">B2B</a></li>
+                    <li class="px-3">
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item" style="color: #ff3c3c" onclick="signOut()">Log Out</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarContent">
+
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-3 align-items-center mt-3 mt-lg-0">
+                <li class="nav-item"><a class="nlink" href="#">About</a></li>
+                <li class="nav-item"><a class="nlink" href="shop.html">Shop</a></li>
+                <li class="nav-item"><a class="nlink" href="#">Contact</a></li>
+                <li class="nav-item"><a class="nlink text-center" href="#">All Categories</a></li>
+            </ul>
+
+        </div>
+    </div>
+</nav>
+<!--NAVBAR-->
+
+
+<div class="container-fluid">
+        <div class="row m-2 m-md-5 shadow-sm border rounded">
+        <div class="col-md-6 p-4 border-end ">
+            <label class="mb-2 fw-semibold">Order Details</label>
+
+            <div class="card-body shadow-sm rounded p-3 my-3 row g-3">
+
+                <div class="col-md-6 col-12 form-floating">
+                    <input type="text" class="form-control" id="firstName" placeholder="First Name">
+                    <label for="firstName" class="form-label">First Name</label>
+                </div>
+
+                <div class="col-md-6 col-12 form-floating">
+                    <input type="text" class="form-control" id="lastName" placeholder="Last Name">
+                    <label for="lastName" class="form-label">Last Name</label>
+                </div>
+
+                <div class="col-6 form-floating">
+                    <input type="text" class="form-control" id="mobile" placeholder="Mobile">
+                    <label for="mobile" class="form-label">Mobile</label>
+                </div>
+
+                <div class="col-6 form-floating">
+                    <select class="form-select" name="city" id="citySelect">
+                        <option value="0" disabled selected>Select City</option>
+                    </select>
+                    <label for="citySelect" class="form-label">City</label>
+                </div>
+
+                <div class="col-12 col-12 form-floating">
+                    <input type="text" class="form-control" id="postalCode" placeholder="Postal code">
+                    <label for="postalCode" class="form-label">Postal code</label>
+                </div>
+
+                <div class="col-md-6 col-12 form-floating">
+                    <input type="text" class="form-control" id="lineOne" placeholder="Line one">
+                    <label for="lineOne" class="form-label">Line one</label>
+                </div>
+
+                <div class="col-md-6 col-12 form-floating">
+                    <input type="text" class="form-control" id="lineTwo" placeholder="Line two">
+                    <label for="lineTwo" class="form-label">Line two</label>
+                </div>
+
+            </div>
+            <div class="row g-3">
+                <div class="col-6">
+                    <input type="radio" class="btn-check" name="deliveryType" id="deliveryPickup" value="storePickup"
+                           autocomplete="off"
+                           checked>
+                    <label class="btn w-100 shadow-sm" for="deliveryPickup">
+                        <i class="bi bi-shop me-2"></i> Store Pickup
+                    </label>
+                </div>
+
+                <div class="col-6">
+                    <input type="radio" class="btn-check" name="deliveryType" id="deliveryHome" value="homeDelivery"
+                           autocomplete="off">
+                    <label class="btn w-100 shadow-sm" for="deliveryHome">
+                        <i class="bi bi-truck me-2"></i> Home Delivery
+                    </label>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-3 mb-2">
+                <div class="card-body shadow-sm rounded border border-primary pt-2 ps-3" id="isCurrentAddressWrap">
+                    <input type="checkbox" class="form-check-input me-3" id="isCurrentAddress" checked>
+                    <label for="isCurrentAddress" class="form-label">Current Address</label>
+                </div>
+            </div>
+
+            <div id="addressSection" class="">
+                <div class="row g-3">
+                    <div class="address-scroll-container p-1">
+                        <form id="addressList">
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+
+            <h6 class="mt-4">Payment Method</h6>
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <input type="radio" class="btn-check" name="paymentMethod" value="cash" id="payCash" checked>
+                    <label class="btn w-100  shadow-sm" for="payCash">
+                        <i class="bi bi-cash me-2"></i> Cash on Delivery
+                    </label>
+                </div>
+                <div class="col-6">
+                    <input type="radio" class="btn-check" name="paymentMethod" value="card" id="payCard">
+                    <label class="btn w-100  shadow-sm" for="payCard">
+                        <i class="bi bi-credit-card me-2"></i> Card Payment
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn btn-dark w-100 fw-bold" id="placeOrderBtn" onclick="checkout()">
+                CONFIRM ORDER
+            </button>
+        </div>
+
+        <div class="col-md-6 p-4 bg-body-tertiary">
+            <h5>Order Summary</h5>
+            <div id="checkout-cart-items">
+                <div class="text-center text-muted py-4">Loading cart items...</div>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Subtotal</span>
+                <span class="fw-bold" id="checkout-subtotal">LKR 0.00</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Delivery</span>
+                <span class="fw-bold" id="checkout-delivery">$0.00</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between mb-3">
+                <span class="h5">Total</span>
+                <span class="h5 fw-bold" id="checkout-total">LKR 0.00</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<!--Off Canvasser-->
+<div class="offcanvas offcanvas-end rounded-start-4" tabindex="-1" id="cart"
+     aria-labelledby="cart-label" style="max-width: 500px; width: 100%;">
+
+    <div class="offcanvas-header border border-top-0 border-end-0 border-start-0 mt-3">
+        <h5 class="offcanvas-title fw-bold" id="cart-label">Cart</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+
+    <div class="offcanvas-body" id="cart-content">
+
+        <div class="card mb-3 border-0 shadow-sm">
+            <div class="row g-0 align-items-center">
+                <div class="col-md-3 p-2">
+                    <img src="assets/images/productimages/60e5e049-1903-42ee-bd0c-120f149dea6d_Himalaya_spot.webp"
+                         class="img-fluid rounded-start" alt="Product Image"
+                         style="height: 80px; width: 80px; object-fit: cover;">
+                </div>
+                <div class="col-md-9">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0">Premium Green Tea</h6>
+                            <button class="btn tex"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold" style="color: #A2BC71FF">$25.00</span>
+                            <div class="input-group input-group-sm w-50">
+                                <button class="btn btn-outline-dark">-</button>
+                                <input type="text" class="form-control text-center" value="1">
+                                <button class="btn btn-outline-dark">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas-footer p-3 border-top bg-light">
+        <div class="d-flex justify-content-between mb-3">
+            <span class="h5">Subtotal</span>
+            <span class="h5 fw-bold" id="order-total-amount"></span>
+        </div>
+        <div class="d-flex justify-content-between mb-3">
+            <span class="h5">Total items</span>
+            <span class="h5 fw-bold" id="order-total-quantity"></span>
+        </div>
+        <div class="d-grid gap-2">
+            <button class="btn btn-lg" id="checkout-btn" style="background-color:#A2BC71FF; color: white ">Checkout</button>
+            <button class="btn btn-outline-dark" data-bs-dismiss="offcanvas">Continue Shopping</button>
+        </div>
+    </div>
+</div>
+<!--Off Canvasser-->
+<!--Footer-->
+<footer class="site-footer">
+    <div class="container pt-5">
+        <div class="row text-center gx-3 gx-md-5" id="footer-features">
+            <div class="col-6 col-md-3 mb-4">
+                <h6>Fast & Secure Delivery</h6>
+                <p class="text-muted">Tell about your service.</p>
+            </div>
+            <div class="col-6 col-md-3 mb-4">
+                <h6>Money-Back Guarantee</h6>
+                <p class="text-muted">Within 10 days.</p>
+            </div>
+            <div class="col-6 col-md-3 mb-4">
+                <h6>24 Hour Return Policy</h6>
+                <p class="text-muted">No question ask.</p>
+            </div>
+            <div class="col-6 col-md-3 mb-4">
+                <h6>Pro Quality Support</h6>
+                <p class="text-muted">24/7 Live support.</p>
+            </div>
+        </div>
+
+        <hr class="mb-5">
+
+        <div class="row d-flex justify-content-center">
+
+            <div class="col-md-3 mb-4 text-center">
+                <h5 class="footer-title">Support</h5>
+                <ul class="list-unstyled footer-links">
+                    <li>
+                        <a href="">
+                            <i class="bi bi-envelope-fill me-2"></i>
+                            support@hercey.lk
+                        </a>
+                    </li>
+                    <li>
+                        <a href="">
+                            <i class="bi bi-telephone-fill me-2"></i>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            Phone Number
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+
+            <div class="col-md-3 mb-4 text-center">
+                <h5 class="footer-title">Account</h5>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="#">My Account</a></li>
+                    <li><a href="#">Login / Register</a></li>
+                    <li><a href="#">Cart</a></li>
+                    <li><a href="#">Wishlist</a></li>
+                    <li><a href="#">Shop</a></li>
+                </ul>
+            </div>
+
+            <div class="col-md-3 mb-4 text-center">
+                <h5 class="footer-title">Quick Link</h5>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms Of Use</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bottom py-3">
+        <div class="container d-flex justify-content-between align-items-center flex-wrap">
+            <div class="d-flex align-items-center flex-wrap">
+                <div class="social-icons me-4">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+                <p class="mb-0 text-muted">©2025. All rights reserved by Hercey.</p>
+            </div>
+
+            <div class="d-flex align-items-center">
+                <span class="me-2 text-muted">Accept For</span>
+                <div class="payment-icons">
+                    <i class="fab fa-cc-visa"></i>
+                    <i class="fab fa-cc-mastercard"></i>
+                </div>
+            </div>
+
+            <button class="btn scroll-to-top-btn" style="background-color: #8bc34a"
+                    onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                <i class="bi bi-arrow-up fw-bolder text-white"></i>
+            </button>
+        </div>
+    </div>
+</footer>
+<!--Footer-->
+<script type="text/javascript" src="https://www.payhere.lk/lib/payhere.js"></script>
+<script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notiflix-aio-3.2.8.min.js"></script>
+<script src="assets/js/checkout.js"></script>
+<script src="assets/js/cart.js"></script>
+<script src="assets/js/header.js"></script>
+<script src="assets/js/notification.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+</body>
+</html>

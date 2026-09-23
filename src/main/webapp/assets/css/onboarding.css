@@ -1,0 +1,76 @@
+.bg-artwork {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    flex-direction: column;
+
+    padding-top: 100px;
+
+    background-image: url("../images/leaf-wave-illustration.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: bottom;
+    height: 100%;
+}
+
+.brand-tagline {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 14px;
+    color: #555;
+    margin-top: -10px;
+    font-weight: 600;
+}
+
+.brand {
+    width: 100%;
+    background-image: url("../images/Hercey_Brand_logo.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    height: 130px;
+    margin-bottom: 20px;
+}
+
+.sign-in-button {
+    background-color: #8bc34a;
+    color: white;
+}
+
+
+
+/*   Password hide|show toggle   */
+.password-toggle-icon {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 10;
+    color: #6c757d;
+}
+
+.form-floating input {
+    padding-right: 40px;
+}
+/*   Password hide|show toggle end   */
+
+::selection {
+    background-color: rgba(139, 195, 74, 0.35); /* Your Green Color */
+    color: #000000; /* Changes text to white for better contrast */
+}
+
+/* Fallback for Firefox */
+::-moz-selection {
+    background-color: #8BC34AFF;
+    color: #ffffff;
+}
+
+@media (max-width: 991.98px) {
+    .bg-artwork { display: none; }
+    .brand { height: 80px; width: 200px; margin: 0 auto 20px; }
+}
+
+@media (max-width: 576px) {
+    .brand-tagline { font-size: 12px; letter-spacing: 1px; }
+}

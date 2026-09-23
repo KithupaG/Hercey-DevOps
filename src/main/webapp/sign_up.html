@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hercy - Sign up</title>
+    <link href="assets/css/onboarding.css" rel="stylesheet">
+    <link href="assets/icons/favicon.ico" type="image/x-ico" rel="icon">
+    <link href="assets/css/vendor/magnific-popup.css" rel="stylesheet">
+    <link href="assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/notification.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+<body style="height: 100vh">
+<div class="container-fluid col-12 h-100" style="height: 100%">
+    <div class="row h-100" style="height: 100%">
+        <div class="col-lg-4 d-none d-lg-block bg-artwork shadow">
+            <div class="brand"></div>
+            <p class="text-center col-10 offset-1 brand-tagline">Rooted in nature, brewed for wellness. We bring you the finest selection of organic teas and herbal remedies, ethically sourced to nourish your body and calm your mind.</p>
+        </div>
+        <div class="col-12 col-lg-8 d-flex conta" style="height: 100%">
+            <div class="col-12 h-100 d-flex justify-content-center align-items-center flex-column">
+                <div class="col-12 col-lg-6">
+                    <h1 class="mb-4">Register</h1>
+                    <div class="form-floating mb-3">
+                        <input class="form-control mb-3" id="fn" type="text" placeholder="">
+                        <label for="fn">First Name</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input class="form-control mb-3" id="ln" placeholder="Last Name" type="text">
+                        <label for="ln">Last Name</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input class="form-control mb-3" id="email" placeholder="email" type="text">
+                        <label for="email">Email</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input class="form-control mb-3" id="mobile" placeholder="Mobile Number" type="text">
+                        <label for="mobile">Mobile Number</label>
+                    </div>
+
+                    <div class="form-floating position-relative mb-3">
+                        <input type="password" id="password" placeholder="password" class="form-control">
+                        <label for="password" class="form-label">Confirm password</label>
+                        <i class="bi bi-eye-slash password-toggle-icon" onclick="togglePassword('password', this)"></i>
+                    </div>
+
+                    <div class="form-floating position-relative mb-3">
+                        <input type="password" id="password2" placeholder="confirm_password" class="form-control">
+                        <label for="password2" class="form-label">Confirm password</label>
+                        <i class="bi bi-eye-slash password-toggle-icon" onclick="togglePassword('password2', this)"></i>
+                    </div>
+
+
+                    <div class="mt-5 d-flex flex-column">
+                        <button class="sign-in-button btn" onclick="sign_up()" style="background-color: #8bc34a; color: white; font-size: medium">
+                            Sign Up
+                        </button>
+                    </div>
+                    <span class="mt-3 d-flex flex-row justify-content-center">
+                            <a href="sign_in.html"
+                               style="text-decoration-color:#8bc34a; color: #8bc34a ">Already have an account ?</a>
+                    </span>
+                    <div class="mt-5 d-flex align-items-center justify-content-between px-5">
+                        <a class="text-decoration-none text-dark me-4" href="#">Privacy Policy</a>
+                        <a class="text-decoration-none text-dark me-4" href="#">User Agreement</a>
+                        <a class="text-decoration-none text-dark" href="#">Copy writes</a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="assets/js/vendor/jquery.js"></script>
+<script src="assets/js/vendor/jquery.magnific-popup.min.js"></script>
+<!--<script src="assets/js/main.js"></script>-->
+<script src="assets/js/notification.js"></script>
+<script src="assets/js/sign_up.js"></script>
+<script src="assets/js/notiflix-aio-3.2.8.min.js"></script>
+</body>
+</html>

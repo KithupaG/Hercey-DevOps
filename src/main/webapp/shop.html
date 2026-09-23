@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop</title>
+    <link href="assets/icons/favicon.ico" type="image/x-ico" rel="icon">
+    <link href="assets/css/nav.css" rel="stylesheet">
+    <link href="assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/nouislider.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="assets/css/shop.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!--NAVBAR-->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 sticky-top shadow">
+            <div class="container-fluid px-2 px-md-5">
+
+                <a class="navbar-brand brand-logo" href="index.html"></a>
+
+                <div class="d-flex align-items-center order-lg-last">
+
+                    <div class="d-flex align-items-center flex-column me-2 me-md-4">
+
+                        <div class="kart-icon position-relative" data-bs-toggle="offcanvas" href="#cart" role="button"
+                             aria-controls="cart" style="cursor: pointer;">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  id="shop-icon-badge"></span>
+                        </div>
+
+                        <div class="price me-2" id="nav-cart-price">00.00</div>
+
+                    </div>
+
+                    <div class="dropdown">
+                        <div class="profile-icon me-3 me-lg-0" data-bs-toggle="dropdown" aria-expanded="false"></div>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="my_account.html">My Account</a></li>
+                            <li><a class="dropdown-item" href="#">Wholesale</a></li>
+                            <li><a class="dropdown-item" href="#">Customer Support</a></li>
+                            <li><a class="dropdown-item" href="#">Contact Us</a></li>
+                            <li><a class="dropdown-item" href="#">B2B</a></li>
+                            <li class="px-3">
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" style="color: #ff3c3c" onclick="signOut()">Log Out</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                        aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarContent">
+
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-3 align-items-center mt-3 mt-lg-0">
+                        <li class="nav-item"><a class="nlink" href="#">About</a></li>
+                        <li class="nav-item"><a class="nlink" href="shop.html">Shop</a></li>
+                        <li class="nav-item"><a class="nlink" href="#">Contact</a></li>
+                        <li class="nav-item"><a class="nlink text-center" href="#">All Categories</a></li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+        <!--NAVBAR-->
+
+        <div class="container py-5">
+            <div class="row g-3 px-2 px-md-5">
+                <aside class="col-12 col-lg-3">
+                    <div class="accordion border border-secondary-subtle rounded-3 shadow-sm sticky-lg-top"
+                         style="top: 100px; z-index: 10;">
+                        <div class="accordion-item">
+                            <h4 class="accordion-header ">
+                                <button class="accordion-button rounded-top-0 fs-5 fw-semibold" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#categories">
+                                    Categories
+                                </button>
+                            </h4>
+                            <div id="categories" class="accordion-collapse collapse show">
+                                <div class="accordion-body ">
+                                    <ul class="list-unstyled d-grid gap-2 fs-6 " id="categoryListBody">
+                                        <li class="d-flex gap-2 align-items-center">
+                                            <input type="checkbox" id="cat1" class="form-check-input">
+                                            <label for="cat1" class="form-check-label">Ceylon Black Tea</label>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h4 class="accordion-header">
+                                <button class="accordion-button fs-5 fw-semibold collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#availability">
+                                    Availability
+                                </button>
+                            </h4>
+                            <div id="availability" class="accordion-collapse collapse">
+                                <div class="accordion-body ">
+                                    <ul class="list-unstyled d-grid gap-2 fs-6 " id="availabilityBody">
+                                        <li class="d-flex gap-2 align-items-center">
+                                            <input type="radio" checked name="availability" id="all-of-stock"
+                                                   class="form-check-input">
+                                            <label for="all-of-stock" class="form-check-label">All</label>
+                                        </li>
+                                        <li class="d-flex gap-2 align-items-center">
+                                            <input type="radio" name="availability" id="in-stock"
+                                                   class="form-check-input">
+                                            <label for="in-stock" class="form-check-label">In stock</label>
+                                        </li>
+                                        <li class="d-flex gap-2 align-items-center">
+                                            <input type="radio" name="availability" id="out-of-stock"
+                                                   class="form-check-input">
+                                            <label for="out-of-stock" class="form-check-label">Out of stock</label>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h4 class="accordion-header">
+                                <button class="accordion-button fs-5 fw-semibold collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#price">
+                                    Price Range
+                                </button>
+                            </h4>
+                            <div id="price" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <div class="d-flex gap-2 mb-3">
+                                        <div class="form-floating flex-fill">
+                                            <input class="form-control" type="number" id="min-price"
+                                                   placeholder="0">
+                                            <label for="min-price">Min</label>
+                                        </div>
+                                        <div class="form-floating flex-fill">
+                                            <input class="form-control" type="number" id="max-price"
+                                                   placeholder="0">
+                                            <label for="max-price">Max</label>
+                                        </div>
+                                    </div>
+                                    <div id="slider" class="mt-4 mx-2"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h4 class="accordion-header">
+                                <button class="accordion-button fs-5 fw-semibold collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#flavour">
+                                    Flavour
+                                </button>
+                            </h4>
+                            <div id="flavour" class="accordion-collapse collapse">
+                                <div class="accordion-body text-muted small text-center">
+                                    Filter by flavor profiles coming soon.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <main class="col-12 col-lg-9">
+                    <div class="p-4 border border-secondary-subtle rounded-3 bg-white shadow-sm">
+
+                        <div class="d-flex justify-content-between align-items-center mb-4 p-3 border rounded shadow-sm bg-white shop-toolbar">
+
+                            <p class="mb-0 text-muted fw-medium" id="result-count">Showing 13 results</p>
+
+                            <div class="d-flex">
+                                <input type="text" class="form-control rounded-start-5 shadow-sm" id="search-input">
+                                <button class="btn px-4 text-nowrap rounded-start-0 rounded-end-5 shadow-sm" id="search-button"
+                                        style="background-color: rgb(87,110,61); color: white;">
+                                    Search
+                                </button>
+                            </div>
+
+                            <div class="d-flex gap-2 align-items-center">
+                                <button class="btn px-4 text-nowrap" id="apply-filters-button"
+                                        style="background-color: #9dbb6d; color: white;">
+                                    Apply Filters
+                                </button>
+                                <select class="form-select" id="st-sort" style="min-width: 180px;">
+                                    <option value="latest" selected>Sort from Latest</option>
+                                    <option value="oldest">Sort from Oldest</option>
+                                    <option value="alpha-desc">Sort by Name Descending</option>
+                                    <option value="alpha-asc">Sort by Name Ascending</option>
+                                    <option value="price-desc">Sort by Price : High to Low</option>
+                                    <option value="price-asc">Sort by Price : Low to High</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4 product-container"
+                             id="product-container">
+
+
+                        </div>
+                        <nav aria-label="Store pagination" class="d-flex justify-content-center mt-5">
+                            <ul class="pagination shadow-sm" id="store-pagination">
+                                <li class="page-item"><a href="#" class="page-link"
+                                                         id="pagination-button-prev">Previous</a></li>
+                                <li class="page-item active"><a class="page-link" href="#" id="pagination-button">1</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!--Off Canvasser-->
+    <div class="offcanvas offcanvas-end rounded-start-4" tabindex="-1" id="cart"
+         aria-labelledby="cart-label" style="max-width: 500px; width: 100%;">
+
+        <div class="offcanvas-header border border-top-0 border-end-0 border-start-0 mt-3">
+            <h5 class="offcanvas-title fw-bold" id="cart-label">Cart</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+
+        <div class="offcanvas-body" id="cart-content">
+
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="row g-0 align-items-center">
+                    <div class="col-md-3 p-2">
+                        <img src="assets/images/productimages/60e5e049-1903-42ee-bd0c-120f149dea6d_Himalaya_spot.webp"
+                             class="img-fluid rounded-start" alt="Product Image"
+                             style="height: 80px; width: 80px; object-fit: cover;">
+                    </div>
+                    <div class="col-md-9">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="card-title mb-0">Premium Green Tea</h6>
+                                <button class="btn tex"><i class="bi bi-x-lg"></i></button>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold" style="color: #A2BC71FF">$25.00</span>
+                                <div class="input-group input-group-sm w-50">
+                                    <button class="btn btn-outline-dark">-</button>
+                                    <input type="text" class="form-control text-center" value="1">
+                                    <button class="btn btn-outline-dark">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="offcanvas-footer p-3 border-top bg-light">
+            <div class="d-flex justify-content-between mb-3">
+                <span class="h5">Subtotal</span>
+                <span class="h5 fw-bold" id="order-total-amount"></span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+                <span class="h5">Total items</span>
+                <span class="h5 fw-bold" id="order-total-quantity"></span>
+            </div>
+            <div class="d-grid gap-2">
+                <button class="btn btn-lg" id="checkout-btn" style="background-color:#A2BC71FF; color: white ">Checkout</button>
+                <button class="btn btn-outline-dark" data-bs-dismiss="offcanvas">Continue Shopping</button>
+            </div>
+        </div>
+    </div>
+    <!--Off Canvasser-->
+</div>
+<script src="assets/js/nouislider.js"></script>
+<script src="assets/js/header.js"></script>
+<script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/notiflix-aio-3.2.8.min.js"></script>
+<script src="assets/js/shop.js"></script>
+<script src="assets/js/cart.js"></script>
+
+</body>
+</html>

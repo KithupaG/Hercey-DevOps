@@ -1,0 +1,10 @@
+::selection {
+    background-color: rgba(139, 195, 74, 0.35); /* Your Green Color */
+    color: #000000; /* Changes text to white for better contrast */
+}
+
+/* Fallback for Firefox */
+::-moz-selection {
+    background-color: #8BC34AFF;
+    color: #ffffff;
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hercy - account_verification</title>
+    <link href="assets/css/onboarding.css" rel="stylesheet">
+    <link href="assets/icons/favicon.ico" type="image/x-ico" rel="icon">
+    <link href="assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body style="height: 100vh">
+<div class="container-fluid col-12 h-100" style="height: 100%">
+    <div class="row h-100" style="height: 100%">
+        <div class="col-12 col-lg-8 d-flex conta" style="height: 100%">
+            <div class="col-12 h-100 d-flex justify-content-center align-items-center flex-column">
+                <div class="col-12 col-lg-6">
+                    <div class="col-12 mb-4">
+                        <div class="brand "></div>
+                    </div>
+                    <div class="col-12 text-center fs-4 fw-medium">Verify Your Account</div>
+                    <div>
+                        <p class="text-center">you verification email has been sent to your email address</p>
+                    </div>
+                    <div class="col-12 form-floating mb-3">
+                        <input class="form-control mb-3" id="verificationCode" placeholder="verification code"
+                               type="text">
+                        <label for="verificationCode">Verification code</label>
+                    </div>
+                    <div class="col-12 px-5 mt-5">
+                        <button class="col-12 btn fw-medium"
+                                style="background-color: #8bc34a; color: white; font-size: medium"
+                                onclick="verify_account()"
+                        >
+                            Verify
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 d-none d-lg-block bg-artwork h-100" style="height: 100%"></div>
+    </div>
+    <script src="assets/js/verify_account.js"></script>
+    <script src="assets/js/notiflix-aio-3.2.8.min.js"></script>
+    <script src="assets/js/notification.js"></script>
+</div>
+</body>
+</html>

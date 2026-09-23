@@ -1,0 +1,70 @@
+::selection {
+    background-color: rgba(139, 195, 74, 0.35); /* Your Green Color */
+    color: #000000; /* Changes text to white for better contrast */
+}
+
+/* Fallback for Firefox */
+::-moz-selection {
+    background-color: #8BC34AFF;
+    color: #ffffff;
+}
+
+/* CSS to visualize your empty image placeholders */
+.img-icon {
+    height: 94px; /* Thumbnail height */
+    width: 100%;
+    cursor: pointer;
+    background-size: cover;
+    background-position: center;
+}
+
+.main-img {
+    height: 500px; /* Main image height */
+    width: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Responsive Border: Only show left border on Large screens (Desktop) */
+@media (min-width: 992px) {
+    .product-details-col {
+        border-left: 1px solid #dee2e6; /* Bootstrap's border-dark-subtle color */
+    }
+}
+
+#desc-container {
+    max-height: 200px; /* Initial Height */
+    overflow: hidden;
+    position: relative;
+    /* This creates the smooth animation */
+    transition: max-height 0.5s ease-in-out;
+}
+
+.desc-fade {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background: linear-gradient(transparent, #fff);
+    /* Smoothly fade the white overlay */
+    transition: opacity 0.3s ease;
+    opacity: 1;
+    pointer-events: none; /* Allows clicking text through the fade */
+}
+
+/* Helper class to hide fade overlay */
+.fade-hidden {
+    opacity: 0;
+}
+
+@media (max-width: 768px) {
+    .main-img { height: 300px; }
+    #thumbnail-container { flex-direction: row !important; gap: 5px; }
+    #thumbnail-container .img-icon { height: 70px; }
+}
+
+@media (max-width: 576px) {
+    .main-img { height: 250px; }
+    #thumbnail-container .img-icon { height: 60px; }
+}
