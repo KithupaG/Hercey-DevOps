@@ -4,7 +4,7 @@ pipeline {
     environment {
         VM_IP = '192.168.56.100'
         VM_USER = 'root'
-        WAR_PATH = target/hercey.war
+        WAR_PATH = 'target/hercey.war'
         JBOSS_CLI = '/opt/jboss/jboss-eap-8.0/bin/jboss-cli.sh'
     }
 
