@@ -11,7 +11,7 @@ pipeline {
     stages {
         stage('Checkout Source Code') {
             steps {
-                Checkout scm
+                checkout scm
             }
         }
         stage('Build WAR file') {
