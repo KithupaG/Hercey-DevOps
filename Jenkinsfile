@@ -10,6 +10,9 @@ pipeline {
         VM_USER = 'root'
         WAR_PATH = 'target/hercey.war'
         JBOSS_CLI = '/opt/jboss/jboss-eap-8.0/bin/jboss-cli.sh'
+
+        IMAGE_NAME = 'my-jboss-app'
+        CONTAINERD_SOCK = '/run/docker/containerd/containerd.sock'
     }
 
     stages {
@@ -21,6 +24,25 @@ pipeline {
         stage('Build WAR file') {
             steps {
                 sh 'mvn clean package -DskipTests'
+            }
+        }stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    echo "Copying compiled WAR to docker..."
+                    sh "cp ${WAR_PATH} hercey.war"
+
+                    echo "Buiilding docker image version ${BUILD_NUMBER}..."
+                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER}"
+
+                    echo "Importing image into rancher desktop"
+                    sh "docker save ${IMAGE_NAME}:${BUILD_NUMBER} | ctr --address ${CONTAINERD_SOCK} -n k8s.io images -"
+
+                    echo "Updaiting kubernetes deployment..."
+                    sh "kubectl set image deployment/jboss-app jboss=${IMAGE_NAME}:${BUILD_NUMBER}"
+
+                    echo "Waiting for rollout to complete..."
+                    sh "kubectl rollout status deployment/jboss-app"
+                }
             }
         }
         stage('Deploy WAR file to JBoss CLI') {
