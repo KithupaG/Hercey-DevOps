@@ -6,11 +6,13 @@ pipeline {
     }
 
     environment {
+        // VM Configuration
         VM_IP = '192.168.56.100'
         VM_USER = 'root'
         WAR_PATH = 'target/hercey.war'
         JBOSS_CLI = '/opt/jboss/jboss-eap-8.0/bin/jboss-cli.sh'
 
+        // Kubernetes Configuration
         IMAGE_NAME = 'my-jboss-app'
         CONTAINERD_SOCK = '/run/docker/containerd/containerd.sock'
     }
@@ -21,23 +23,26 @@ pipeline {
                 checkout scm
             }
         }
+
         stage('Build WAR file') {
             steps {
                 sh 'mvn clean package -DskipTests'
             }
-        }stage('Deploy to Kubernetes') {
+        }
+
+        stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    echo "Copying compiled WAR to docker..."
+                    echo "Copying compiled WAR to Docker build context..."
                     sh "cp ${WAR_PATH} hercey.war"
 
-                    echo "Buiilding docker image version ${BUILD_NUMBER}..."
-                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER}"
+                    echo "Building Docker image version ${BUILD_NUMBER}..."
+                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
 
-                    echo "Importing image into rancher desktop"
-                    sh "docker save ${IMAGE_NAME}:${BUILD_NUMBER} | ctr --address ${CONTAINERD_SOCK} -n k8s.io images -"
+                    echo "Importing image into Rancher Desktop / K3s containerd cache..."
+                    sh "docker save ${IMAGE_NAME}:${BUILD_NUMBER} | ctr --address ${CONTAINERD_SOCK} -n k8s.io images import -"
 
-                    echo "Updaiting kubernetes deployment..."
+                    echo "Updating Kubernetes Deployment..."
                     sh "kubectl set image deployment/jboss-app jboss=${IMAGE_NAME}:${BUILD_NUMBER}"
 
                     echo "Waiting for rollout to complete..."
@@ -45,23 +50,23 @@ pipeline {
                 }
             }
         }
-        stage('Deploy WAR file to JBoss CLI') {
+
+        stage('Deploy WAR file to JBoss EAP VM') {
             steps {
-                sshagent(credentials: ['jboss-vm-ssh-key']) {
-                    echo "Transfering artifact directly into the VM"
+                sshagent(credentials: ['jboss-domain-key']) {
+                    echo "Transferring artifact directly into the VM..."
                     sh "scp -o StrictHostKeyChecking=no ${WAR_PATH} ${VM_USER}@${VM_IP}:/tmp/"
 
-                    echo "Executing zero-downtime deployment using JBOSS CLI"
+                    echo "Executing deployment using JBoss CLI..."
                     sh """
                         ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
-                        "${JBOSS_CLI} --connect --controller=192.168.56.100:9990 --command='deploy --force /tmp/\$(basename ${WAR_PATH})'"
+                        "${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/\$(basename ${WAR_PATH})'"
                     """
 
-                    echo "Delete the WAR file from the VM after deployment"
+                    echo "Cleaning up temporary WAR file from VM..."
                     sh "ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} 'rm -f /tmp/\$(basename ${WAR_PATH})'"
                 }
             }
         }
     }
-
 }
