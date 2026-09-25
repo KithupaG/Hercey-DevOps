@@ -39,9 +39,6 @@ pipeline {
                     echo "Building Docker image version ${BUILD_NUMBER}..."
                     sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
 
-                    echo "Importing image into Rancher Desktop / K3s containerd cache..."
-                    sh "docker save ${IMAGE_NAME}:${BUILD_NUMBER} | ctr --address ${CONTAINERD_SOCK} -n k8s.io images import -"
-
                     echo "Updating Kubernetes Deployment..."
                     sh "kubectl set image deployment/jboss-app jboss=${IMAGE_NAME}:${BUILD_NUMBER}"
 
@@ -50,7 +47,6 @@ pipeline {
                 }
             }
         }
-
         stage('Deploy WAR file to JBoss EAP VM') {
             steps {
                 sshagent(credentials: ['jboss-domain-key']) {
