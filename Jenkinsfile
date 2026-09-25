@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven for JBOSS Pipeline'
+    }
+
     environment {
         VM_IP = '192.168.56.100'
         VM_USER = 'root'
