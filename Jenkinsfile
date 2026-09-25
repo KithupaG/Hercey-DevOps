@@ -25,7 +25,7 @@ pipeline {
         }
         stage('Deploy WAR file to JBoss CLI') {
             steps {
-                sshagent(credentials: ['jboss-domain-key']) {
+                sshagent(credentials: ['jboss-vm-ssh-key']) {
                     echo "Transfering artifact directly into the VM"
                     sh "scp -o StrictHostKeyChecking=no ${WAR_PATH} ${VM_USER}@${VM_IP}:/tmp/"
 
