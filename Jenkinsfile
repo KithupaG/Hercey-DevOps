@@ -80,6 +80,12 @@ pipeline {
                     sh "cp ${WAR_PATH} hercey.war"
                     sh "docker build -t ${IMAGE_NAME} ."
 
+                    echo "Downloading HTML report template..."
+                    sh "curl -sSL -o html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl"
+
+                    echo "Generate Trivy HTML report"
+                    sh "trivy image --format template --template '@html.tpl' -o trivy-report.html ${IMAGE_NAME}"
+
                     echo "Scanning image for High/Critical vulnerabilities"
                     sh "trivy image --format template --template '@contrib/html.tpl' --output trivy-report.html ${IMAGE_NAME}"
 
