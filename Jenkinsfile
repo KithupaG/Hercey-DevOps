@@ -12,7 +12,7 @@ pipeline {
         VERSION = "${MAJOR_MINOR}.${BUILD_NUMBER}"
 
         // Nexus Repository Config
-        NEXUS_HOST = '192.168.56.1:8081'
+        NEXUS_HOST = 'host.docker.internal:8081'
         NEXUS_REPO = 'hercey-releases'
         NEXUS_CREDS = 'nexus-credentials'
 
