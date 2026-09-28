@@ -3,9 +3,11 @@ FROM quay.io/wildfly/wildfly:latest
 COPY hercey.war /opt/jboss/wildfly/standalone/deployments/
 
 USER root
-RUN yum update -y
+RUN dnf update -y || microdnf update -y
 
 USER jboss
+
+COPY hercey.war /opt/jboss/wildfly/standalone/deployments/
 
 EXPOSE 8080 9990
 

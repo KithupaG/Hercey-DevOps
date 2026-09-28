@@ -81,6 +81,20 @@ pipeline {
                     sh "docker build -t ${IMAGE_NAME} ."
 
                     echo "Scanning image for High/Critical vulnerabilities"
+                    sh "trivy image --format template --template '@contrib/html.tpl' --output trivy-report.html ${IMAGE_NAME}"
+
+                    echo "Publishing HTML report to Jenkins..."
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'trivy-report.html',
+                        reportName: 'Trivy vulnerability report',
+                        reportTitles: 'Trivy security scan report'
+                    ])
+
+                    echo "Scanning image for High/Critical vulnerabilities"
                     sh "trivy image --severity HIGH,CRITICAL --exit-code 1 ${IMAGE_NAME}"
                 }
             }
