@@ -23,7 +23,7 @@ pipeline {
         JBOSS_CLI = '/opt/jboss/jboss-eap-8.0/bin/jboss-cli.sh'
 
         // Kubernetes Configuration
-        IMAGE_NAME = 'my-jboss-app:${VERSION}'
+        IMAGE_NAME = "my-jboss-app:${VERSION}"
         CONTAINERD_SOCK = '/run/docker/containerd/containerd.sock'
     }
 
@@ -85,9 +85,6 @@ pipeline {
 
                     echo "Generate Trivy HTML report"
                     sh "trivy image --format template --template '@html.tpl' -o trivy-report.html ${IMAGE_NAME}"
-
-                    echo "Scanning image for High/Critical vulnerabilities"
-                    sh "trivy image --format template --template '@contrib/html.tpl' --output trivy-report.html ${IMAGE_NAME}"
 
                     echo "Publishing HTML report to Jenkins..."
                     publishHTML([
