@@ -15,13 +15,13 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.1.7</version>
+            <version>10.1.30</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-jasper</artifactId>
-            <version>10.1.7</version>
+            <version>10.1.30</version>
         </dependency>
 
         <dependency>
@@ -34,13 +34,13 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>6.1.7.Final</version>
+            <version>6.6.1.Final</version>
         </dependency>
 
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <version>8.0.0.Final</version>
+            <version>8.0.1.Final</version>
         </dependency>
 
         <dependency>
@@ -48,7 +48,6 @@
             <artifactId>mysql-connector-j</artifactId>
             <version>9.0.0</version>
         </dependency>
-
 
         <!-- JERSEY -->
         <dependency>
@@ -66,17 +65,15 @@
             <artifactId>jersey-media-multipart</artifactId>
             <version>3.1.2</version>
         </dependency>
-        <!-- JERSEY -->
 
-        <!--GSON-->
+        <!-- GSON -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
         </dependency>
-        <!--GSON-->
 
-        <!--JAKARTA-MAIL-->
+        <!-- JAKARTA-MAIL -->
         <dependency>
             <groupId>org.eclipse.angus</groupId>
             <artifactId>jakarta.mail</artifactId>
@@ -92,31 +89,27 @@
             <artifactId>jakarta.activation-api</artifactId>
             <version>2.1.2</version>
         </dependency>
-        <!--JAKARTA-MAIL-->
 
-        <!--MAIL-TEMPLATE-ROCKET BASE-->
+        <!-- MAIL-TEMPLATE-ROCKET BASE -->
         <dependency>
             <groupId>io.rocketbase.mail</groupId>
             <artifactId>email-template-builder</artifactId>
             <version>2.4.0</version>
         </dependency>
-        <!--MAIL-TEMPLATE-ROCKET BASE-->
 
-        <!--FILE-EXTENSION-->
+        <!-- FILE-EXTENSION -->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.16.1</version>
         </dependency>
-        <!--FILE-EXTENSION-->
 
-        <!--PDF-->
+        <!-- PDF -->
         <dependency>
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
-            <version>1.3.39</version>
+            <version>1.4.2</version>
         </dependency>
-        <!--PDF-->
 
     </dependencies>
 
