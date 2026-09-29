@@ -175,52 +175,51 @@ pipeline {
             }
         }
         stage('DAST Security Scan (OWASP ZAP)') {
-    steps {
-        script {
-            echo "Executing OWASP ZAP Baseline Scan..."
-            sh '''
-                # 1. Clean old reports and force-create zap-reports with full permissions
-                docker run --rm -v $(pwd):/work -w /work alpine sh -c "rm -rf zap-reports OWASP_20ZAP_20DAST_20Reports && mkdir -p zap-reports && chmod 777 zap-reports"
+            steps {
+                script {
+                    echo "Executing OWASP ZAP Baseline Scan..."
+                    sh '''
+                        mkdir -p zap-reports
 
-                # 2. Run ZAP scan for Kubernetes endpoint
-                docker run --rm \
-                    -u $(id -u):$(id -g) \
-                    -v $(pwd)/zap-reports:/zap/wrk/:rw \
-                    ghcr.io/zaproxy/zaproxy:stable \
-                    zap-baseline.py \
-                    -t http://192.168.127.2:30080/hercey/ \
-                    -r zap_report_k8s.html \
-                    -I || true
+                        docker run --name zap_k8s_scan \
+                        -u root \
+                        ghcr.io/zaproxy/zaproxy:stable \
+                        zap-baseline.py \
+                        -t http://192.168.127.2:30080/hercey/ \
+                        -r zap_report_k8s.html \
+                        -I || true
 
-                # 3. Run ZAP scan for JBoss endpoint
-                docker run --rm \
-                    -u $(id -u):$(id -g) \
-                    -v $(pwd)/zap-reports:/zap/wrk/:rw \
-                    ghcr.io/zaproxy/zaproxy:stable \
-                    zap-baseline.py \
-                    -t http://192.168.56.101:8280/hercey-fixed/ \
-                    -r zap_report_jboss.html \
-                    -I || true
+                        docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.html zap-reports/zap_report_k8s.html || true
 
-                # 4. Guarantee directory exists before fixing permissions for Jenkins
-                docker run --rm -v $(pwd):/work -w /work alpine sh -c "mkdir -p zap-reports && chmod -R 777 zap-reports"
+                        docker rm zap_k8s_scan || true
 
-                # 5. List generated reports
-                ls -la zap-reports
-            '''
+                        docker run --name zap_jboss_scan \
+                            -u root \
+                            ghcr.io/zaproxy/zaproxy:stable \
+                            zap-baseline.py \
+                            -t http://192.168.56.101:8280/hercey-fixed/ \
+                            -r zap_report_jboss.html \
+                            -I || true
 
-            publishHTML([
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'zap-reports',
-                reportFiles: 'zap_report_k8s.html,zap_report_jboss.html',
-                reportName: 'OWASP ZAP DAST Reports',
-                reportTitles: 'Kubernetes Scan, JBoss VM Scan'
-            ])
+                        docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.html zap-reports/zap_report_jboss.html || true
+
+                        docker rm zap_jboss_scan || true
+                        
+                        ls -la zap-reports
+                    '''
+
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'zap-reports',
+                        reportFiles: 'zap_report_k8s.html,zap_report_jboss.html',
+                        reportName: 'OWASP ZAP DAST Reports',
+                        reportTitles: 'Kubernetes Scan, JBoss VM Scan'
+                    ])
+                }
+            }
         }
-    }
-}
     }
 
     post {
