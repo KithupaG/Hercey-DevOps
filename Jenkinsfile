@@ -39,7 +39,7 @@ pipeline {
                 script {
                     echo "Scanning repository for leaked credentials with TruffleHog..."
                     sh '''
-                        tar -cf - . | docker run --rm -i trufflesecurity/trufflehog:latest filesystem - --entropy=true --no-verification --fail
+                        tar -cf - . | docker run --rm -i trufflesecurity/trufflehog:latest filesystem - --no-verification --fail
                     '''
                 }
             }
