@@ -181,25 +181,13 @@ pipeline {
                     sh '''
                         mkdir -p zap-reports
 
-                        docker run --name zap_k8s_scan \
-                        -u root \
-                        ghcr.io/zaproxy/zaproxy:stable \
-                        zap-baseline.py \
-                        -t http://192.168.127.2:30080/hercey/ \
-                        -r zap_report_k8s.html \
-                        -I || true
+                        docker run --name zap_k8s_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.127.2:30080/hercey/ -r zap_report_k8s.html -I || true
 
                         docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.html zap-reports/zap_report_k8s.html || true
 
                         docker rm zap_k8s_scan || true
 
-                        docker run --name zap_jboss_scan \
-                            -u root \
-                            ghcr.io/zaproxy/zaproxy:stable \
-                            zap-baseline.py \
-                            -t http://192.168.56.101:8280/hercey-fixed/ \
-                            -r zap_report_jboss.html \
-                            -I || true
+                        docker run --name zap_jboss_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.56.101:8280/hercey-fixed/ -r zap_report_jboss.html -I || true
 
                         docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.html zap-reports/zap_report_jboss.html || true
 
