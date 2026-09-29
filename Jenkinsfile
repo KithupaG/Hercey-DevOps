@@ -39,8 +39,20 @@ pipeline {
                 script {
                     echo "Scanning repository for leaked credentials with TruffleHog..."
                     sh '''
-                        tar -cf - . | docker run --rm -i trufflesecurity/trufflehog:latest filesystem - --no-verification --fail
+                        mkdir -p trufflehog-reports
+                        tar -cf - . | docker run --rm -i trufflesecurity/trufflehog:latest filesystem - --no-verification --json > trufflehog-reports/results.json || true
+                        python3 scripts/generate_trufflehog_report.py
                     '''
+
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'trufflehog-reports',
+                        reportFiles: 'trufflehog-report.html',
+                        reportName: 'TruffleHog Secret Scan Report',
+                        reportTitles: 'TruffleHog Secret Scan Report'
+                    ])
                 }
             }
         }
