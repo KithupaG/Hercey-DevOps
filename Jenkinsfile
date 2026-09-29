@@ -175,50 +175,52 @@ pipeline {
             }
         }
         stage('DAST Security Scan (OWASP ZAP)') {
-            steps {
-                script {
-                    echo "Executing OWASP ZAP Baseline Scan..."
-                    sh '''
-                        docker run --rm -v $(pwd):/work -w /work alpine rm -rf zap-reports OWASP_20ZAP_20DAST_20Reports
+    steps {
+        script {
+            echo "Executing OWASP ZAP Baseline Scan..."
+            sh '''
+                # 1. Clean old reports and force-create zap-reports with full permissions
+                docker run --rm -v $(pwd):/work -w /work alpine sh -c "rm -rf zap-reports OWASP_20ZAP_20DAST_20Reports && mkdir -p zap-reports && chmod 777 zap-reports"
 
-                        # 1. Scan Kubernetes NodePort Endpoint
-                        docker run --rm \
-                            -u $(id -u):$(id -g) \
-                            -v $(pwd)/zap-reports:/zap/wrk/:rw \
-                            ghcr.io/zaproxy/zaproxy:stable \
-                            zap-baseline.py \
-                            -t http://192.168.127.2:30080/hercey/ \
-                            -r zap_report_k8s.html \
-                            I || true
+                # 2. Run ZAP scan for Kubernetes endpoint
+                docker run --rm \
+                    -u $(id -u):$(id -g) \
+                    -v $(pwd)/zap-reports:/zap/wrk/:rw \
+                    ghcr.io/zaproxy/zaproxy:stable \
+                    zap-baseline.py \
+                    -t http://192.168.127.2:30080/hercey/ \
+                    -r zap_report_k8s.html \
+                    -I || true
 
-                        # 2. Scan JBoss EAP VM Endpoint
-                        docker run --rm \
-                            -u $(id -u):$(id -g) \
-                            -v $(pwd)/zap-reports:/zap/wrk/:rw \
-                            ghcr.io/zaproxy/zaproxy:stable \
-                            zap-baseline.py \
-                            -t http://192.168.56.101:8280/hercey-fixed/ \
-                            -r zap_report_jboss.html \
-                            -I || true
-                        # 4. Explicitly grant read/write permissions to all generated report files
-                        docker run --rm -v $(pwd):/work -w /work alpine chmod -R 777 zap-reports
-                
-                        # 5. Debug output: verify files exist and check user ownership
-                        ls -la zap-reports
-                    '''
+                # 3. Run ZAP scan for JBoss endpoint
+                docker run --rm \
+                    -u $(id -u):$(id -g) \
+                    -v $(pwd)/zap-reports:/zap/wrk/:rw \
+                    ghcr.io/zaproxy/zaproxy:stable \
+                    zap-baseline.py \
+                    -t http://192.168.56.101:8280/hercey-fixed/ \
+                    -r zap_report_jboss.html \
+                    -I || true
 
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'zap-reports',
-                        reportFiles: 'zap_report_k8s.html,zap_report_jboss.html',
-                        reportName: 'OWASP ZAP DAST Reports',
-                        reportTitles: 'Kubernetes Scan, JBoss VM Scan'
-                    ])
-                }
-            }    
+                # 4. Guarantee directory exists before fixing permissions for Jenkins
+                docker run --rm -v $(pwd):/work -w /work alpine sh -c "mkdir -p zap-reports && chmod -R 777 zap-reports"
+
+                # 5. List generated reports
+                ls -la zap-reports
+            '''
+
+            publishHTML([
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'zap-reports',
+                reportFiles: 'zap_report_k8s.html,zap_report_jboss.html',
+                reportName: 'OWASP ZAP DAST Reports',
+                reportTitles: 'Kubernetes Scan, JBoss VM Scan'
+            ])
         }
+    }
+}
     }
 
     post {
