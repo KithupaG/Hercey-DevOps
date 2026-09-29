@@ -59,9 +59,10 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                envVarsForTool tool(name: 'NodeJS 20.x', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation')
-                withSonarQubeEnv('SonarQubeServer') {
-                    sh "mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=${APP_NAME} -Dsonar.projectName=${APP_NAME}"
+                nodejs('NodeJS 20.x') {
+                    withSonarQubeEnv('SonarQubeServer') {
+                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
+                    }
                 }
             }
         }
