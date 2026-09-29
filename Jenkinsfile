@@ -189,7 +189,7 @@ pipeline {
                     '''
 
                     publishHTML([
-                        allowMissing: false,])
+                        allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'zap-reports',
