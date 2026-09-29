@@ -36,7 +36,7 @@ pipeline {
 
         stage('Secret Scanning (TruffleHog)') {
             steps {
-                steps {
+                script {
                     echo "Scanning repository for leaked credentials with TruffleHog..."
                     sh '''
                         docker run --rm -v $(pwd):/workdir trufflesecurity/trufflehog:latest filesystem /workdir --no-verification --fail
