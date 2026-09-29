@@ -172,6 +172,34 @@ pipeline {
                 }
             }
         }
+        stage('DAST Security Scan (OWASP ZAP)') {
+            steps {
+                script {
+                    echo "Initiating OWASP Zap scan"
+                    sh '''
+
+                        mkdir -p zap-reports
+                        chmod 777 zap-reports
+
+                        #1. Scan kubernetes endpoint
+                        docker run --rm -v $(pwd)/zap-reports:/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.127.2:30080/hercey/ -r zap-reports_k8s.html -I || true
+
+                        #2. Scan JBOSS endpoint
+                        docker run --rm -v $(pwd)/zap-reports:/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.56.101:8280/hercey-fixed/ -r zap-reports_jboss.html -I || true
+                    '''
+
+                    publishHTML([
+                        allowMissing: false,])
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'zap-reports',
+                        reportFiles: 'zap_report_k8s.html, zap_report_jboss.html',
+                        reportName: 'OWASP ZAP DAST Report',
+                        reportTitles: 'Kubernetes Deployment Scan, JBoss VM Deployment Scan'
+                    ])
+                }
+            }
+        }
     }
 
     post {
