@@ -24,6 +24,7 @@ pipeline {
 
         // Kubernetes Configuration
         IMAGE_NAME = "my-jboss-app:${VERSION}"
+        TAG = "${env.BUILD_NUMBER}"
         CONTAINERD_SOCK = '/run/docker/containerd/containerd.sock'
     }
 
@@ -98,13 +99,17 @@ pipeline {
                 )
             }
         }
+                stage('Build Docker Image') {
+            steps {
+                script {
+                    echo "Building custom WildFly Docker image"
+                    sh "docker build -t ${IMAGE_NAME}:${TAG} -t ${IMAGE_NAME}:latest ."
+                }
+            }
+        }
         stage('Trivy Scanning') {
             steps {
                 script {
-                    echo "Copying WAR and building Docker image"
-                    sh "cp ${WAR_PATH} hercey.war"
-                    sh "docker build -t ${IMAGE_NAME} ."
-
                     echo "Downloading HTML report template..."
                     sh "curl -sSL -o html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl"
 
@@ -213,6 +218,11 @@ pipeline {
     post {
         always {
             cleanWs()
+
+            script {
+                echo "Running post-build cleanup..."
+                sh "docker image prune -f || true"
+            }
         }
 
         success {

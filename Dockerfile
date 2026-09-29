@@ -1,13 +1,11 @@
-FROM quay.io/wildfly/wildfly:latest
-
-COPY hercey.war /opt/jboss/wildfly/standalone/deployments/
+FROM quay.io/wildfly/wildfly:32.0.0:Final
 
 USER root
 RUN dnf update -y || microdnf update -y
 
 USER jboss
 
-COPY hercey.war /opt/jboss/wildfly/standalone/deployments/
+COPY --chown=jboss:root hercey.war /opt/jboss/wildfly/standalone/deployments/
 
 EXPOSE 8080 9990
 
