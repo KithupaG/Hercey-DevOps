@@ -175,17 +175,32 @@ pipeline {
         stage('DAST Security Scan (OWASP ZAP)') {
             steps {
                 script {
-                    echo "Initiating OWASP Zap scan"
+                    echo "Executing OWASP ZAP Baseline Scan..."
                     sh '''
+                        # Clean up any leftover root-owned directory from previous runs
                         rm -rf zap-reports
                         mkdir -p zap-reports
-                        chmod -R 777 zap-reports
+                        chmod 777 zap-reports
 
-                        #1. Scan kubernetes endpoint
-                        docker run --rm -u $(id -u):$(id -g) -v $(pwd)/zap-reports:/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.127.2:30080/hercey/ -r zap-reports_k8s.html -I || true
+                        # 1. Scan Kubernetes NodePort Endpoint
+                        docker run --rm \
+                            -u $(id -u):$(id -g) \
+                            -v $(pwd)/zap-reports:/zap/wrk/:rw \
+                            ghcr.io/zaproxy/zaproxy:stable \
+                            zap-baseline.py \
+                            -t http://192.168.127.2:30080/hercey/ \
+                            -r zap_report_k8s.html \
+                            I || true
 
-                        #2. Scan JBOSS endpoint
-                        docker run --rm -u $(id -u):$(id -g) -v $(pwd)/zap-reports:/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.56.101:8280/hercey-fixed/ -r zap-reports_jboss.html -I || true
+                        # 2. Scan JBoss EAP VM Endpoint
+                        docker run --rm \
+                            -u $(id -u):$(id -g) \
+                            -v $(pwd)/zap-reports:/zap/wrk/:rw \
+                            ghcr.io/zaproxy/zaproxy:stable \
+                            zap-baseline.py \
+                            -t http://192.168.56.101:8280/hercey-fixed/ \
+                            -r zap_report_jboss.html \
+                            -I || true
                     '''
 
                     publishHTML([
@@ -193,12 +208,12 @@ pipeline {
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'zap-reports',
-                        reportFiles: 'zap_report_k8s.html, zap_report_jboss.html',
-                        reportName: 'OWASP ZAP DAST Report',
-                        reportTitles: 'Kubernetes Deployment Scan, JBoss VM Deployment Scan'
+                        reportFiles: 'zap_report_k8s.html,zap_report_jboss.html',
+                        reportName: 'OWASP ZAP DAST Reports',
+                        reportTitles: 'Kubernetes Scan, JBoss VM Scan'
                     ])
                 }
-            }
+            }    
         }
     }
 
