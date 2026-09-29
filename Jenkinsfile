@@ -179,10 +179,7 @@ pipeline {
                 script {
                     echo "Executing OWASP ZAP Baseline Scan..."
                     sh '''
-                        # Clean up any leftover root-owned directory from previous runs
-                        rm -rf zap-reports
-                        mkdir -p zap-reports
-                        chmod 777 zap-reports
+                        docker run --rm -v $(pwd):/work -w /work alpine rm -rf zap-reports OWASP_20ZAP_20DAST_20Reports
 
                         # 1. Scan Kubernetes NodePort Endpoint
                         docker run --rm \
@@ -203,6 +200,11 @@ pipeline {
                             -t http://192.168.56.101:8280/hercey-fixed/ \
                             -r zap_report_jboss.html \
                             -I || true
+                        # 4. Explicitly grant read/write permissions to all generated report files
+                        docker run --rm -v $(pwd):/work -w /work alpine chmod -R 777 zap-reports
+                
+                        # 5. Debug output: verify files exist and check user ownership
+                        ls -la zap-reports
                     '''
 
                     publishHTML([
