@@ -1,4 +1,4 @@
-FROM quay.io/wildfly/wildfly:32.0.0:Final
+FROM quay.io/wildfly/wildfly:32.0.0.Final
 
 USER root
 RUN dnf update -y || microdnf update -y
