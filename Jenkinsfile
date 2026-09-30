@@ -11,6 +11,14 @@ pipeline {
         MAJOR_MINOR = '1.0'
         VERSION = "${MAJOR_MINOR}.${BUILD_NUMBER}"
 
+        // Harbor Configuration
+        HARBOR_REGISTRY = '192.168.56.50'
+        HARBOR_PROJECT = 'hercey'
+        HARBOR_CREDS = 'jenkins-robot'
+
+        HARBOR_IMAGE = "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${APP_NAME}:${VERSION}"
+        HARBOR_IMAGE_LATEST = "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${APP_NAME}:latest"
+
         // Nexus Repository Config
         NEXUS_HOST = 'host.docker.internal:8081'
         NEXUS_REPO = 'hercey-releases'
@@ -21,11 +29,6 @@ pipeline {
         VM_USER = 'root'
         WAR_PATH = "target/${APP_NAME}.war"
         JBOSS_CLI = '/opt/jboss/jboss-eap-8.0/bin/jboss-cli.sh'
-
-        // Kubernetes Configuration
-        IMAGE_NAME = "my-jboss-app:${VERSION}"
-        TAG = "${env.BUILD_NUMBER}"
-        CONTAINERD_SOCK = '/run/docker/containerd/containerd.sock'
     }
 
     stages {
@@ -99,11 +102,11 @@ pipeline {
                 )
             }
         }
-                stage('Build Docker Image') {
+        stage('Build Docker Image') {
             steps {
                 script {
                     echo "Building custom WildFly Docker image"
-                    sh "docker build -t ${IMAGE_NAME}:${TAG} -t ${IMAGE_NAME}:latest ."
+                    sh "docker build -t ${HARBOR_IMAGE} -t ${HARBOR_IMAGE_LATEST} ."
                 }
             }
         }
@@ -114,7 +117,7 @@ pipeline {
                     sh "curl -sSL -o html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl"
 
                     echo "Generate Trivy HTML report"
-                    sh "trivy image --format template --template '@html.tpl' -o trivy-report.html ${IMAGE_NAME}"
+                    sh "trivy image --format template --template '@html.tpl' -o trivy-report.html ${HARBOR_IMAGE}"
 
                     echo "Publishing HTML report to Jenkins..."
                     publishHTML([
@@ -128,7 +131,21 @@ pipeline {
                     ])
 
                     echo "Scanning image for High/Critical vulnerabilities"
-                    sh "trivy image --severity HIGH,CRITICAL --exit-code 1 ${IMAGE_NAME}"
+                    sh "trivy image --severity HIGH,CRITICAL --exit-code 1 ${HARBOR_IMAGE}"
+                }
+            }
+        }
+        stage('Push image to harbor registry') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: HARBOR_CREDS, usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASS')]) {
+                    script {
+                        echo "Authenticating with harbor registry"
+                        sh "echo '$HARBOR_PASS' | docker login ${HARBOR_REGISTRY} -u '$HARBOR_USER' --password-stdin"
+
+                        echo "Pushing images to Harbor..."
+                        sh "docker push ${HARBOR_IMAGE}"
+                        sh "docker push ${HARBOR_IMAGE_LATEST}"
+                    }
                 }
             }
         }
@@ -137,8 +154,8 @@ pipeline {
             steps {
                 script {
                     try {
-                        echo "Deploying image version ${VERSION} to K8S..."
-                        sh "kubectl set image deployment/jboss-app jboss=${IMAGE_NAME}"
+                        echo "Deploying image ${HARBOR_IMAGE} to K8S..."
+                        sh "kubectl set image deployment/jboss-app jboss=${HARBOR_IMAGE}"
                         sh "kubectl rollout status deployment/jboss-app --timeout=60s"
                     }catch (Exception e) {
                         echo "WARNING: Kubernetes deployment failed! Initiating automatic rollback..."
@@ -221,6 +238,10 @@ pipeline {
 
             script {
                 echo "Running post-build cleanup..."
+                sh "docker logout ${HARBOR_REGISTRY} || true"
+
+                sh "docker rmi ${HARBOR_IMAGE} ${HARBOR_IMAGE_LATEST} || true"
+
                 sh "docker image prune -f || true"
             }
         }
