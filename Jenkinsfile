@@ -130,11 +130,8 @@ pipeline {
         stage('Trivy Scanning') {
             steps {
                 script {
-                    echo "Downloading HTML report template..."
-                    sh "curl -sSL -o html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl"
-
-                    echo "Generate Trivy HTML report"
-                    sh "trivy image --format template --template '@html.tpl' -o trivy-report.html ${HARBOR_IMAGE}"
+                    echo "Generate Trivy HTML report using local template..."
+                    sh "trivy image --format template --template '@templates/html.tpl' -o trivy-report.html ${HARBOR_IMAGE}"
 
                     echo "Publishing HTML report to Jenkins..."
                     publishHTML([
