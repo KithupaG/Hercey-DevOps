@@ -54,8 +54,8 @@ pipeline {
                         mkdir -p trufflehog-reports
                         
                         docker run --rm -v $(pwd):/workspace trufflesecurity/trufflehog:latest \
-                        filesystem /workplace \
-                        --config=/workplace/trufflehog-config.yaml \
+                        filesystem /workspace \
+                        --config=/workspace/trufflehog-config.yaml \
                         --no-verification \
                         --json > trufflehog-reports/results.json || true
 
