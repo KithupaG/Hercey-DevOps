@@ -53,15 +53,16 @@ pipeline {
                     sh '''
                         mkdir -p trufflehog-reports
 
-                        ls -la
-                        
-                        docker run --rm -v $(pwd):/workspace trufflesecurity/trufflehog:latest \
-                        filesystem /workspace \
-                        --config=/workspace/trufflehog-config.yaml \
-                        --no-verification \
-                        --json > trufflehog-reports/results.json || true
+                        docker run --rm \
+                            --volumes-from $(hostname) \
+                            -w $(pwd) \
+                            trufflesecurity/trufflehog:latest \
+                            filesystem . \
+                            --config=trufflehog-config.yaml \
+                            --no-verification \
+                            --json > trufflehog-reports/results.json || true
 
-                        python3 scripts/generate_trufflehog_report.py
+                            python3 scripts/generate_trufflehog_report.py
                     '''
 
                     publishHTML([
