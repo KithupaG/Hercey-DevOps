@@ -1,7 +1,15 @@
 detectors:
   - name: generic-xml-password
     regex: '(?i)<property\s+name="[^"]*(password|pwd|secret)[^"]*">\s*([^<\s]+)\s*</property>'
+    keywords:
+      - password
+      - pwd
+      - secret
 
   - name: generic-properties-password
-    regex:
-      pattern: '(?i)(password|pwd|secret|credentials)\s*=\s*([^\s#]+)'
+    regex: '(?i)(password|pwd|secret|credentials)\s*=\s*([^\s#]+)'
+    keywords:
+      - password
+      - pwd
+      - secret
+      - credentials
