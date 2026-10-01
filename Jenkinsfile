@@ -52,6 +52,8 @@ pipeline {
                     echo "Scanning repository for leaked credentials with TruffleHog..."
                     sh '''
                         mkdir -p trufflehog-reports
+
+                        ls -la
                         
                         docker run --rm -v $(pwd):/workspace trufflesecurity/trufflehog:latest \
                         filesystem /workspace \
