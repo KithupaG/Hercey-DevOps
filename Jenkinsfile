@@ -31,6 +31,14 @@ pipeline {
         JBOSS_CLI = '/opt/jboss/jboss-eap-8.0/bin/jboss-cli.sh'
     }
 
+    parameters {
+        booleanParam(
+            name: 'RUN_DAST',
+            defaultValue: false,
+            description: 'Check this box to execute the OWASP ZAP DAST scan'
+        )
+    }
+
     stages {
         stage('Checkout Source Code') {
             steps {
@@ -38,28 +46,28 @@ pipeline {
             }
         }
 
-        // stage('Secret Scanning (TruffleHog)') {
-        //     steps {
-        //         script {
-        //             echo "Scanning repository for leaked credentials with TruffleHog..."
-        //             sh '''
-        //                 mkdir -p trufflehog-reports
-        //                 tar -cf - . | docker run --rm -i trufflesecurity/trufflehog:latest filesystem - --no-verification --json > trufflehog-reports/results.json || true
-        //                 python3 scripts/generate_trufflehog_report.py
-        //             '''
+        stage('Secret Scanning (TruffleHog)') {
+            steps {
+                script {
+                    echo "Scanning repository for leaked credentials with TruffleHog..."
+                    sh '''
+                        mkdir -p trufflehog-reports
+                        tar -cf - . | docker run --rm -i trufflesecurity/trufflehog:latest filesystem - --no-verification --json > trufflehog-reports/results.json || true
+                        python3 scripts/generate_trufflehog_report.py
+                    '''
 
-        //             publishHTML([
-        //                 allowMissing: false,
-        //                 alwaysLinkToLastBuild: true,
-        //                 keepAll: true,
-        //                 reportDir: 'trufflehog-reports',
-        //                 reportFiles: 'trufflehog-report.html',
-        //                 reportName: 'TruffleHog Secret Scan Report',
-        //                 reportTitles: 'TruffleHog Secret Scan Report'
-        //             ])
-        //         }
-        //     }
-        // }
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'trufflehog-reports',
+                        reportFiles: 'trufflehog-report.html',
+                        reportName: 'TruffleHog Secret Scan Report',
+                        reportTitles: 'TruffleHog Secret Scan Report'
+                    ])
+                }
+            }
+        }
 
         stage('SonarQube Analysis') {
             steps {
@@ -196,40 +204,44 @@ pipeline {
                 }
             }
         }
-        // stage('DAST Security Scan (OWASP ZAP)') {
-        //     steps {
-        //         script {
-        //             echo "Executing OWASP ZAP Baseline Scan..."
-        //             sh '''
-        //                 mkdir -p zap-reports
+        stage('DAST Security Scan (OWASP ZAP)') {
+            when {
+                branch 'main'
+                expression { return params.RUN_DAST == true }
+            }
+            steps {
+                script {
+                    echo "Executing OWASP ZAP Baseline Scan..."
+                    sh '''
+                        mkdir -p zap-reports
 
-        //                 docker run --name zap_k8s_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.127.2:30080/hercey/ -r zap_report_k8s.html -I || true
+                        docker run --name zap_k8s_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.127.2:30080/hercey/ -r zap_report_k8s.html -I || true
 
-        //                 docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.html zap-reports/zap_report_k8s.html || true
+                        docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.html zap-reports/zap_report_k8s.html || true
 
-        //                 docker rm zap_k8s_scan || true
+                        docker rm zap_k8s_scan || true
 
-        //                 docker run --name zap_jboss_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.56.101:8280/hercey-fixed/ -r zap_report_jboss.html -I || true
+                        docker run --name zap_jboss_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.56.101:8280/hercey-fixed/ -r zap_report_jboss.html -I || true
 
-        //                 docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.html zap-reports/zap_report_jboss.html || true
+                        docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.html zap-reports/zap_report_jboss.html || true
 
-        //                 docker rm zap_jboss_scan || true
+                        docker rm zap_jboss_scan || true
                         
-        //                 ls -la zap-reports
-        //             '''
-
-        //             publishHTML([
-        //                 allowMissing: true,
-        //                 alwaysLinkToLastBuild: true,
-        //                 keepAll: true,
-        //                 reportDir: 'zap-reports',
-        //                 reportFiles: 'zap_report_k8s.html,zap_report_jboss.html',
-        //                 reportName: 'OWASP ZAP DAST Reports',
-        //                 reportTitles: 'Kubernetes Scan, JBoss VM Scan'
-        //             ])
-        //         }
-        //     }
-        // }
+                        ls -la zap-reports
+                    '''
+                    
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'zap-reports',
+                        reportFiles: 'zap_report_k8s.html,zap_report_jboss.html',
+                        reportName: 'OWASP ZAP DAST Reports',
+                        reportTitles: 'Kubernetes Scan, JBoss VM Scan'
+                    ])
+                }
+            }
+        }
     }
 
     post {
