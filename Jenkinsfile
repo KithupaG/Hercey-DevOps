@@ -52,7 +52,13 @@ pipeline {
                     echo "Scanning repository for leaked credentials with TruffleHog..."
                     sh '''
                         mkdir -p trufflehog-reports
-                        tar -cf - . | docker run --rm -i trufflesecurity/trufflehog:latest filesystem - --no-verification --json > trufflehog-reports/results.json || true
+                        
+                        docker run --rm -v $(pwd):/workspace trufflesecurity/trufflehog:latest \
+                        filesystem /workplace \
+                        --config=/workplace/trufflehog-config.yaml \
+                        --no-verification \
+                        --json > trufflehog-reports/results.json || true
+
                         python3 scripts/generate_trufflehog_report.py
                     '''
 
@@ -73,7 +79,7 @@ pipeline {
             steps {
                 nodejs('NodeJS 20.x') {
                     withSonarQubeEnv('SonarQubeServer') {
-                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
+                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main'
                     }
                 }
             }
@@ -206,7 +212,6 @@ pipeline {
         }
         stage('DAST Security Scan (OWASP ZAP)') {
             when {
-                branch 'main'
                 expression { return params.RUN_DAST == true }
             }
             steps {
