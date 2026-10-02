@@ -127,25 +127,91 @@ pipeline {
                 }
             }
         }
-        stage('Trivy Scanning') {
+        stage('Trivy Repository & SCA Scan') {
             steps {
                 script {
-                    echo "Generate Trivy HTML report using local template..."
-                    sh "trivy image --format template --template '@templates/html.tpl' -o trivy-report.html ${HARBOR_IMAGE}"
+                    echo "Trivy Scan (Filesystem)"
+                    sh '''
+                        mkdir -p trivy-reports
 
-                    echo "Publishing HTML report to Jenkins..."
+                        # Combined FS scan using local HTML templates
+                        trivy fs \
+                            --scanners vuln,misconfig,secret,license \
+                            --format template \
+                            --template '@templates/html.tpl' \
+                            -o trivy-reports/trivy-fs-report.html .
+                        
+                        # Generagte SBOM 
+                        trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
+                    '''
+
                     publishHTML([
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: '.',
-                        reportFiles: 'trivy-report.html',
-                        reportName: 'Trivy vulnerability report',
-                        reportTitles: 'Trivy security scan report'
+                        reportDir: 'trivy-reports',
+                        reportFiles: 'trivy-fs-report.html',
+                        reportName: 'Trivy Repository Scan',
+                        reportTitles: 'FS Security & License Audit'
                     ])
 
-                    echo "Scanning image for High/Critical vulnerabilities"
+                    archiveArtifacts artifacts: 'trivy-reports/sbom-source.json', allowEmptyArchive : false
+                }
+            }
+        }
+        stage('Trivy Image Scan & SBOM') {
+            steps {
+                script {
+                    echo "Trivy Scan (Container)"
+
+                    sh """
+                        trivy image \
+                            --format template \
+                            --template '@templates/html.tpl' \
+                            -o trivy-reports/trivy-image-report.html \
+                            ${HARBOR_IMAGE}
+
+                        trivy image --format cyclonedx -o trivy-reports/sbom-image.json ${HARBOR_IMAGE}
+                    """
+
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'trivy-reports',
+                        reportFiles: 'trivy-image-report.html',
+                        reportName: 'Trivy Image Scan',
+                        reportTitles: 'Container Image Security Scan'
+                    ])
+
+                    archiveArtifacts artifacts: 'trivy-reports/sbom-image.json', allowEmptyArchive: false
+
                     sh "trivy image --severity HIGH,CRITICAL --exit-code 1 ${HARBOR_IMAGE}"
+                }
+            }
+        }
+        stage('Trivy Kubernetes Audit') {
+            steps {
+                script {
+                    echo "Trivy Scan (Kubernetes Cluster)"
+                    sh '''
+                        trivy k8s \
+                            --report summary \
+                            --format template \
+                            --template '@templates/html.tpl' \
+                            -o trivy-reports/trivy-k8s-report.html \
+                            deployment/jboss-app || true
+                    '''
+
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'trivy-reports'
+                        reportFiles: 'trivy-k8s-report.html',
+                        reportName: 'Trivy K8S Cluster Audit',
+                        reportTitles: 'Kubernetes Workload Security Audit'
+                    ])
                 }
             }
         }
