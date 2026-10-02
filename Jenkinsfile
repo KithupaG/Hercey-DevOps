@@ -232,14 +232,16 @@ pipeline {
                     script {
                         def dojoUrl = "http://192.168.56.50:8080/api/v2/import-scan"
                         def productName = "Hercey-Application"
+                        def productType = "Research and Development"
                         def engagementName = "CI/CD Automated Scans"
 
                         if(fileExists('reports/trufflehog.json')) {
                             sh """
                                 curl -X POST "${dojoUrl}" \\
-                                -H "Authorization:: Token ${DOJO_TOKEN}" \\
+                                -H "Authorization: Token ${DOJO_TOKEN}" \\
                                 -F "scan_type=TruffleHog Scan" \\
                                 -F "product_name=${productName}" \\
+                                -F "product_type=${productType}" \\
                                 -F "engagement_name=${engagementName}" \\
                                 -F "auto_create_context=true" \\
                                 -F "close_old_findings=true" \\
@@ -253,6 +255,7 @@ pipeline {
                                 -H "Authorization: Token ${DOJO_TOKEN}" \\
                                 -F "scan_type=Trivy Scan" \\
                                 -F "product_name=${productName}" \\
+                                -F "product_type_name=${productType}" \\
                                 -F "engagement_name=${engagementName}" \\
                                 -F "auto_create_context=true" \\
                                 -F "close_old_findings=true" \\
