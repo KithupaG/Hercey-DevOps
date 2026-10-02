@@ -249,17 +249,17 @@ pipeline {
                         // Upload TruffleHog findings
                         if (fileExists('trufflehog-reports/results.json')) {
                             echo "Uploading TruffleHog scan to DefectDojo..."
-                            sh """
-                                curl -X POST "${dojoUrl}" \\
-                                -H "Authorization: Token ${DOJO_TOKEN}" \\
-                                -F "scan_type=TruffleHog Scan" \\
-                                -F "product_name=${productName}" \\
-                                -F "product_type_name=${productType}" \\
-                                -F "engagement_name=${engagementName}" \\
-                                -F "auto_create_context=true" \\
-                                -F "close_old_findings=true" \\
+                            sh '''
+                                curl -v -X POST "http://192.168.56.50:8080/api/v2/import-scan/" \
+                                -H "Authorization: Token $DOJO_TOKEN" \
+                                -F "scan_type=TruffleHog Scan" \
+                                -F "product_name=Hercey-Application" \
+                                -F "product_type_name=Research and Development" \
+                                -F "engagement_name=CI/CD Automated Scans" \
+                                -F "auto_create_context=true" \
+                                -F "close_old_findings=true" \
                                 -F "file=@trufflehog-reports/results.json"
-                            """
+                            '''
                         }
 
                         // ADDED: Upload Trivy Filesystem scan findings
