@@ -228,7 +228,7 @@ pipeline {
 
         stage('Upload findings to DefectDojo') {
             steps {
-                withCredentials([credentialsId: 'defectdojo-api-token', variable: 'DOJO_TOKEN']) {
+                withCredentials([string(credentialsId: 'defectdojo-api-token', variable: 'DOJO_TOKEN')]) {
                     script {
                         def dojoUrl = "http://192.168.56.50:8080/api/v2/import-scan"
                         def productName = "Hercey-Application"
