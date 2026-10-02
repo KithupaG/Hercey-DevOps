@@ -384,7 +384,7 @@ pipeline {
             echo "Pipeline completed successfully! version ${VERSION} is active on K8S and VM"
 
             sh '''
-                sh "docker image prune -f || true"
+                docker image prune -f || true
 
                 trivy clean --cache || true
             '''
