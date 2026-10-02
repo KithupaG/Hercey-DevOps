@@ -193,7 +193,7 @@ pipeline {
         stage('Trivy Kubernetes Audit') {
             steps {
                 script {
-                    echo "Trivy Scan (Kubernetes Cluster)"
+                    echo "3. Auditing Deployed Workload on Kubernetes Cluster..."
                     sh '''
                         mkdir -p trivy-reports
 
@@ -205,13 +205,13 @@ pipeline {
                             deployment/jboss-app || true
                     '''
 
-                    publishHTML(target: [
+                    publishHTML([
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'trivy-reports'
+                        reportDir: 'trivy-reports',
                         reportFiles: 'trivy-k8s-report.html',
-                        reportName: 'Trivy K8S Cluster Audit',
+                        reportName: 'Trivy K8s Cluster Audit',
                         reportTitles: 'Kubernetes Workload Security Audit'
                     ])
                 }
