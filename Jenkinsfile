@@ -399,12 +399,16 @@ pipeline {
                     sh '''
                         mkdir -p zap-reports
 
-                        docker run --name zap_k8s_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.127.2:30080/hercey/ -r zap_report_k8s.html -I || true
+                        # K8s DAST Scan: Added -J to generate JSON report for DefectDojo
+                        docker run --name zap_k8s_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.127.2:30080/hercey/ -r zap_report_k8s.html -J zap_report_k8s.json -I || true
                         docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.html zap-reports/zap_report_k8s.html || true
+                        docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.json zap-reports/zap_report_k8s.json || true
                         docker rm zap_k8s_scan || true
 
-                        docker run --name zap_jboss_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.56.101:8280/hercey-fixed/ -r zap_report_jboss.html -I || true
+                        # JBoss VM DAST Scan: Added -J to generate JSON report for DefectDojo
+                        docker run --name zap_jboss_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.56.101:8280/hercey-fixed/ -r zap_report_jboss.html -J zap_report_jboss.json -I || true
                         docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.html zap-reports/zap_report_jboss.html || true
+                        docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.json zap-reports/zap_report_jboss.json || true
                         docker rm zap_jboss_scan || true
                     '''
 
