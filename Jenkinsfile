@@ -205,7 +205,7 @@ pipeline {
                             deployment/jboss-app || true
                     '''
 
-                    publishHTML([
+                    publishHTML(target: [
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
