@@ -195,6 +195,8 @@ pipeline {
                 script {
                     echo "Trivy Scan (Kubernetes Cluster)"
                     sh '''
+                        mkdir -p trivy-reports
+
                         trivy k8s \
                             --report summary \
                             --format template \
