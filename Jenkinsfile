@@ -72,11 +72,11 @@ pipeline {
                             --no-verification \
                             --json > trufflehog-reports/results.json || true
 
-                            python3 scripts/generate_trufflehog_report.py
+                        python3 scripts/generate_trufflehog_report.py || true
                     '''
 
                     publishHTML([
-                        allowMissing: false,
+                        allowMissing: true,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'trufflehog-reports',
@@ -106,7 +106,7 @@ pipeline {
             }
         }
 
-        stage('Buil WAR with dynamic versioning') {
+        stage('Build WAR with dynamic versioning') {
             steps {
                 echo "Building artifact version: ${VERSION}"
                 sh "mvn clean package -DskipTests -Drevision=${VERSION}"
@@ -129,29 +129,29 @@ pipeline {
                 )
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Building custom WildFly Docker image"
+                    echo "Building custom WildFly Docker image..."
                     sh "docker build -t ${HARBOR_IMAGE} -t ${HARBOR_IMAGE_LATEST} ."
                 }
             }
         }
+
         stage('Trivy Repository & SCA Scan') {
             steps {
                 script {
-                    echo "Trivy Scan (Filesystem)"
+                    echo "Trivy Scan (Filesystem)..."
                     sh '''
                         mkdir -p trivy-reports
 
-                        # Combined FS scan using local HTML templates
                         trivy fs \
                             --scanners vuln,misconfig,secret,license \
                             --format template \
                             --template '@templates/html.tpl' \
                             -o trivy-reports/trivy-fs-report.html .
-                        
-                        # Generagte SBOM 
+
                         trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
                     '''
 
@@ -165,22 +165,29 @@ pipeline {
                         reportTitles: 'FS Security & License Audit'
                     ])
 
-                    archiveArtifacts artifacts: 'trivy-reports/sbom-source.json', allowEmptyArchive : false
+                    archiveArtifacts artifacts: 'trivy-reports/sbom-source.json', allowEmptyArchive: false
                 }
             }
         }
+
         stage('Trivy Image Scan & SBOM') {
             steps {
                 script {
-                    echo "Trivy Scan (Container)"
-
+                    echo "Trivy Scan (Container Image)..."
                     sh """
+                        mkdir -p trivy-reports
+
+                        # Standard JSON export for DefectDojo integration
+                        trivy image --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
+
+                        # HTML report for Jenkins publishing
                         trivy image \
                             --format template \
                             --template '@templates/html.tpl' \
                             -o trivy-reports/trivy-image-report.html \
                             ${HARBOR_IMAGE}
 
+                        # CycloneDX SBOM export
                         trivy image --format cyclonedx -o trivy-reports/sbom-image.json ${HARBOR_IMAGE}
                     """
 
@@ -198,10 +205,11 @@ pipeline {
                 }
             }
         }
+
         stage('Trivy Kubernetes Audit') {
             steps {
                 script {
-                    echo "3. Auditing Deployed Workload on Kubernetes Cluster..."
+                    echo "Auditing Deployed Workload on Kubernetes Cluster..."
                     sh '''
                         mkdir -p trivy-reports
 
@@ -235,21 +243,25 @@ pipeline {
                         def productType = "Research and Development"
                         def engagementName = "CI/CD Automated Scans"
 
-                        if(fileExists('reports/trufflehog.json')) {
+                        // Upload TruffleHog findings
+                        if (fileExists('trufflehog-reports/results.json')) {
+                            echo "Uploading TruffleHog scan to DefectDojo..."
                             sh """
                                 curl -X POST "${dojoUrl}" \\
                                 -H "Authorization: Token ${DOJO_TOKEN}" \\
                                 -F "scan_type=TruffleHog Scan" \\
                                 -F "product_name=${productName}" \\
-                                -F "product_type=${productType}" \\
+                                -F "product_type_name=${productType}" \\
                                 -F "engagement_name=${engagementName}" \\
                                 -F "auto_create_context=true" \\
                                 -F "close_old_findings=true" \\
-                                -F "file=@reports/trufflehog.json"
+                                -F "file=@trufflehog-reports/results.json"
                             """
                         }
 
-                        if(fileExists('reports/trivy-image.json')) {
+                        // Upload Trivy Image scan findings
+                        if (fileExists('trivy-reports/trivy-image.json')) {
+                            echo "Uploading Trivy Image scan to DefectDojo..."
                             sh """
                                 curl -X POST "${dojoUrl}" \\
                                 -H "Authorization: Token ${DOJO_TOKEN}" \\
@@ -259,7 +271,7 @@ pipeline {
                                 -F "engagement_name=${engagementName}" \\
                                 -F "auto_create_context=true" \\
                                 -F "close_old_findings=true" \\
-                                -F "file=@reports/trivy-image.json"
+                                -F "file=@trivy-reports/trivy-image.json"
                             """
                         }
                     }
@@ -271,7 +283,7 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: HARBOR_CREDS, usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASS')]) {
                     script {
-                        echo "Authenticating with harbor registry"
+                        echo "Authenticating with harbor registry..."
                         sh "echo '$HARBOR_PASS' | docker login ${HARBOR_REGISTRY} -u '$HARBOR_USER' --password-stdin"
 
                         echo "Pushing images to Harbor..."
@@ -289,7 +301,7 @@ pipeline {
                         echo "Deploying image ${HARBOR_IMAGE} to K8S..."
                         sh "kubectl set image deployment/jboss-app jboss=${HARBOR_IMAGE}"
                         sh "kubectl rollout status deployment/jboss-app --timeout=60s"
-                    }catch (Exception e) {
+                    } catch (Exception e) {
                         echo "WARNING: Kubernetes deployment failed! Initiating automatic rollback..."
                         sh "kubectl rollout undo deployment/jboss-app"
                         sh "kubectl rollout status deployment/jboss-app"
@@ -304,7 +316,7 @@ pipeline {
                 sshagent(credentials: ['jboss-vm-ssh-key']) {
                     script {
                         try {
-                            echo "Creating backup of current deployment on VM"
+                            echo "Creating backup of current deployment on VM..."
                             sh "ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} 'cp /tmp/hercey.war /tmp/hercey.war.bak 2>/dev/null || true'"
 
                             echo "Transferring artifact directly into the VM..."
@@ -315,19 +327,19 @@ pipeline {
                                 ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
                                 "${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war'"
                             """
-                        }catch(Exception e) {
-                            echo "WARNING: Jboss VM deployment failed! Restoring backup WAR file..."
+                        } catch (Exception e) {
+                            echo "WARNING: JBoss VM deployment failed! Restoring backup WAR file..."
                             sh """
                                 ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
                                 "if [ -f /tmp/hercey.war.bak ]; then ${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war.bak'; fi"
                             """
                             error "JBoss VM Deployment failed and was rolled back to previous backup: ${e.message}"
                         }
-
                     }
                 }
             }
         }
+
         stage('DAST Security Scan (OWASP ZAP)') {
             when {
                 expression { return params.RUN_DAST == true }
@@ -339,20 +351,14 @@ pipeline {
                         mkdir -p zap-reports
 
                         docker run --name zap_k8s_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.127.2:30080/hercey/ -r zap_report_k8s.html -I || true
-
                         docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.html zap-reports/zap_report_k8s.html || true
-
                         docker rm zap_k8s_scan || true
 
                         docker run --name zap_jboss_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.56.101:8280/hercey-fixed/ -r zap_report_jboss.html -I || true
-
                         docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.html zap-reports/zap_report_jboss.html || true
-
                         docker rm zap_jboss_scan || true
-                        
-                        ls -la zap-reports
                     '''
-                    
+
                     publishHTML([
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
@@ -369,32 +375,24 @@ pipeline {
 
     post {
         always {
-            cleanWs()
-
             script {
                 echo "Running post-build cleanup..."
                 sh "docker logout ${HARBOR_REGISTRY} || true"
-
                 sh "docker rmi ${HARBOR_IMAGE} ${HARBOR_IMAGE_LATEST} || true"
-
-                sh '''
-                    rm -rf trivy-reports/ trufflehog-reports/ zap-reports/ reports/ || true
-                '''
             }
+            cleanWs()
         }
 
         success {
-            echo "Pipeline completed successfully! version ${VERSION} is active on K8S and VM"
-
+            echo "Pipeline completed successfully! Version ${VERSION} is active on K8S and VM"
             sh '''
                 docker image prune -f || true
-
                 trivy clean --cache || true
             '''
         }
 
         failure {
-            echo "Pipeline failed! check stage logs for more details."
+            echo "Pipeline failed! Check stage logs for details."
         }
     }
 }
