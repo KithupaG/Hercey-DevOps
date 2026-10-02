@@ -241,93 +241,6 @@ pipeline {
             }
         }
 
-        stage('Upload findings to DefectDojo') {
-            steps {
-                withCredentials([string(credentialsId: 'defectdojo-api-token', variable: 'DOJO_TOKEN')]) {
-                    script {
-                        def dojoUrl = "http://192.168.56.50:8080/api/v2/import-scan/"
-                        def productName = "Hercey-Application"
-                        def productType = "Research and Development"
-                        def engagementName = "CI/CD Automated Scans"
-
-                        withEnv([
-                            "API_URL=${dojoUrl}",
-                            "PROD_NAME=${productName}",
-                            "PROD_TYPE=${productType}",
-                            "ENG_NAME=${engagementName}"
-                        ]) {
-
-                            // 1. Upload SonarQube Scan
-                            if (fileExists('sonarqube-reports/sonar-report.json')) {
-                                echo "Uploading SonarQube scan to DefectDojo..."
-                                sh '''
-                                    curl -v -X POST "$API_URL" \
-                                    -H "Authorization: Token $DOJO_TOKEN" \
-                                    -F "scan_type=SonarQube Scan" \
-                                    -F "product_name=$PROD_NAME" \
-                                    -F "product_type_name=$PROD_TYPE" \
-                                    -F "engagement_name=$ENG_NAME" \
-                                    -F "auto_create_context=true" \
-                                    -F "close_old_findings=true" \
-                                    -F "file=@sonarqube-reports/sonar-report.json"
-                                '''
-                            }
-
-                            // 2. Upload TruffleHog Scan
-                            if (fileExists('trufflehog-reports/results.json')) {
-                                echo "Uploading TruffleHog scan to DefectDojo..."
-                                sh '''
-                                    curl -v -X POST "$API_URL" \
-                                    -H "Authorization: Token $DOJO_TOKEN" \
-                                    -F "scan_type=TruffleHog Scan" \
-                                    -F "product_name=$PROD_NAME" \
-                                    -F "product_type_name=$PROD_TYPE" \
-                                    -F "engagement_name=$ENG_NAME" \
-                                    -F "auto_create_context=true" \
-                                    -F "close_old_findings=true" \
-                                    -F "file=@trufflehog-reports/results.json"
-                                '''
-                            }
-
-                            // 3. Upload Trivy Filesystem Scan (Service: Source Code)
-                            if (fileExists('trivy-reports/trivy-fs.json')) {
-                                echo "Uploading Trivy Filesystem scan to DefectDojo..."
-                                sh '''
-                                    curl -v -X POST "$API_URL" \
-                                    -H "Authorization: Token $DOJO_TOKEN" \
-                                    -F "scan_type=Trivy Scan" \
-                                    -F "service=Source Code FS" \
-                                    -F "product_name=$PROD_NAME" \
-                                    -F "product_type_name=$PROD_TYPE" \
-                                    -F "engagement_name=$ENG_NAME" \
-                                    -F "auto_create_context=true" \
-                                    -F "close_old_findings=true" \
-                                    -F "file=@trivy-reports/trivy-fs.json"
-                                '''
-                            }
-
-                            // 4. Upload Trivy Container Image Scan (Service: Container Image)
-                            if (fileExists('trivy-reports/trivy-image.json')) {
-                                echo "Uploading Trivy Image scan to DefectDojo..."
-                                sh '''
-                                    curl -v -X POST "$API_URL" \
-                                    -H "Authorization: Token $DOJO_TOKEN" \
-                                    -F "scan_type=Trivy Scan" \
-                                    -F "service=Container Image" \
-                                    -F "product_name=$PROD_NAME" \
-                                    -F "product_type_name=$PROD_TYPE" \
-                                    -F "engagement_name=$ENG_NAME" \
-                                    -F "auto_create_context=true" \
-                                    -F "close_old_findings=true" \
-                                    -F "file=@trivy-reports/trivy-image.json"
-                                '''
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         stage('Push image to harbor registry') {
             steps {
                 withCredentials([usernamePassword(credentialsId: HARBOR_CREDS, usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASS')]) {
@@ -421,6 +334,126 @@ pipeline {
                         reportName: 'OWASP ZAP DAST Reports',
                         reportTitles: 'Kubernetes Scan, JBoss VM Scan'
                     ])
+                }
+            }
+        }
+        stage('Upload findings to DefectDojo') {
+            steps {
+                withCredentials([string(credentialsId: 'defectdojo-api-token', variable: 'DOJO_TOKEN')]) {
+                    script {
+                        def dojoUrl = "http://192.168.56.50:8080/api/v2/import-scan/"
+                        def productName = "Hercey-Application"
+                        def productType = "Research and Development"
+                        def engagementName = "CI/CD Automated Scans"
+
+                        withEnv([
+                            "API_URL=${dojoUrl}",
+                            "PROD_NAME=${productName}",
+                            "PROD_TYPE=${productType}",
+                            "ENG_NAME=${engagementName}"
+                        ]) {
+
+                            // 1. Upload SonarQube Scan
+                            if (fileExists('sonarqube-reports/sonar-report.json')) {
+                                echo "Uploading SonarQube scan to DefectDojo..."
+                                sh '''
+                                    curl -v -X POST "$API_URL" \
+                                    -H "Authorization: Token $DOJO_TOKEN" \
+                                    -F "scan_type=SonarQube Scan" \
+                                    -F "product_name=$PROD_NAME" \
+                                    -F "product_type_name=$PROD_TYPE" \
+                                    -F "engagement_name=$ENG_NAME" \
+                                    -F "auto_create_context=true" \
+                                    -F "close_old_findings=true" \
+                                    -F "file=@sonarqube-reports/sonar-report.json"
+                                '''
+                            }
+
+                            // 2. Upload TruffleHog Scan
+                            if (fileExists('trufflehog-reports/results.json')) {
+                                echo "Uploading TruffleHog scan to DefectDojo..."
+                                sh '''
+                                    curl -v -X POST "$API_URL" \
+                                    -H "Authorization: Token $DOJO_TOKEN" \
+                                    -F "scan_type=TruffleHog Scan" \
+                                    -F "product_name=$PROD_NAME" \
+                                    -F "product_type_name=$PROD_TYPE" \
+                                    -F "engagement_name=$ENG_NAME" \
+                                    -F "auto_create_context=true" \
+                                    -F "close_old_findings=true" \
+                                    -F "file=@trufflehog-reports/results.json"
+                                '''
+                            }
+
+                            // 3. Upload Trivy Filesystem Scan (Service: Source Code)
+                            if (fileExists('trivy-reports/trivy-fs.json')) {
+                                echo "Uploading Trivy Filesystem scan to DefectDojo..."
+                                sh '''
+                                    curl -v -X POST "$API_URL" \
+                                    -H "Authorization: Token $DOJO_TOKEN" \
+                                    -F "scan_type=Trivy Scan" \
+                                    -F "service=Source Code FS" \
+                                    -F "product_name=$PROD_NAME" \
+                                    -F "product_type_name=$PROD_TYPE" \
+                                    -F "engagement_name=$ENG_NAME" \
+                                    -F "auto_create_context=true" \
+                                    -F "close_old_findings=true" \
+                                    -F "file=@trivy-reports/trivy-fs.json"
+                                '''
+                            }
+
+                            // 4. Upload Trivy Container Image Scan (Service: Container Image)
+                            if (fileExists('trivy-reports/trivy-image.json')) {
+                                echo "Uploading Trivy Image scan to DefectDojo..."
+                                sh '''
+                                    curl -v -X POST "$API_URL" \
+                                    -H "Authorization: Token $DOJO_TOKEN" \
+                                    -F "scan_type=Trivy Scan" \
+                                    -F "service=Container Image" \
+                                    -F "product_name=$PROD_NAME" \
+                                    -F "product_type_name=$PROD_TYPE" \
+                                    -F "engagement_name=$ENG_NAME" \
+                                    -F "auto_create_context=true" \
+                                    -F "close_old_findings=true" \
+                                    -F "file=@trivy-reports/trivy-image.json"
+                                '''
+                            }
+
+                            // 5. OWASP ZAP K8s Scan
+                            if (fileExists('zap-reports/zap_report_k8s.json')) {
+                                echo "Uploading OWASP ZAP K8s scan to DefectDojo..."
+                                sh '''
+                                    curl -v -X POST "$API_URL" \
+                                    -H "Authorization: Token $DOJO_TOKEN" \
+                                    -F "scan_type=ZAP Scan" \
+                                    -F "service=K8s DAST" \
+                                    -F "product_name=$PROD_NAME" \
+                                    -F "product_type_name=$PROD_TYPE" \
+                                    -F "engagement_name=$ENG_NAME" \
+                                    -F "auto_create_context=true" \
+                                    -F "close_old_findings=true" \
+                                    -F "file=@zap-reports/zap_report_k8s.json"
+                                '''
+                            }
+
+                            // 6. OWASP ZAP JBoss VM Scan
+                            if (fileExists('zap-reports/zap_report_jboss.json')) {
+                                echo "Uploading OWASP ZAP JBoss VM scan to DefectDojo..."
+                                sh '''
+                                    curl -v -X POST "$API_URL" \
+                                    -H "Authorization: Token $DOJO_TOKEN" \
+                                    -F "scan_type=ZAP Scan" \
+                                    -F "service=JBoss VM DAST" \
+                                    -F "product_name=$PROD_NAME" \
+                                    -F "product_type_name=$PROD_TYPE" \
+                                    -F "engagement_name=$ENG_NAME" \
+                                    -F "auto_create_context=true" \
+                                    -F "close_old_findings=true" \
+                                    -F "file=@zap-reports/zap_report_jboss.json"
+                                '''
+                            }
+                        }
+                    }
                 }
             }
         }
