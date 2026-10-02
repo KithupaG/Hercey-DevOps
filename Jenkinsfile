@@ -5,6 +5,16 @@ pipeline {
         maven 'Maven for JBOSS Pipeline'
     }
 
+    options {
+        buildDiscarder(logRotator(
+            daysToKeepStr: '7',
+            numToKeepStr: '10',
+            artifactDaysToKeepStr: '7',
+            artifactNumToKeepStr: '10'
+        ))
+        disableConcurrentBuilds()
+    }
+
     environment {
         // Dynamic Versioning
         APP_NAME = 'hercey'
@@ -103,7 +113,7 @@ pipeline {
             }
         }
 
-        stage('Public Artifact to Nexus') {
+        stage('Publish Artifact to Nexus') {
             steps {
                 nexusArtifactUploader(
                     nexusVersion: 'nexus3',
@@ -215,6 +225,45 @@ pipeline {
                 }
             }
         }
+
+        stage('Upload findings to DefectDojo') {
+            steps {
+                withCredentials([credentialsId: 'defectdojo-api-token', variable: 'DOJO_TOKEN']) {
+                    script {
+                        def dojoUrl = "http://192.168.56.50:8080/api/v2/import-scan"
+                        def productName = "Hercey-Application"
+                        def engagementName = "CI/CD Automated Scans"
+
+                        if(fileExists('reports/trufflehog.json')) {
+                            sh """
+                                curl -X POST "${dojoUrl}" \\
+                                -H "Authorization:: Token ${DOJO_TOKEN}" \\
+                                -F "scan_type=TruffleHog Scan" \\
+                                -F "product_name=${productName}" \\
+                                -F "engagement_name=${engagementName}" \\
+                                -F "auto_create_context=true" \\
+                                -F "close_old_findings=true" \\
+                                -F "file=@reports/trufflehog.json"
+                            """
+                        }
+
+                        if(fileExists('reports/trivy-image.json')) {
+                            sh """
+                                curl -X POST "${dojoUrl}" \\
+                                -H "Authorization: Token ${DOJO_TOKEN}" \\
+                                -F "scan_type=Trivy Scan" \\
+                                -F "product_name=${productName}" \\
+                                -F "engagement_name=${engagementName}" \\
+                                -F "auto_create_context=true" \\
+                                -F "close_old_findings=true" \\
+                                -F "file=@reports/trivy-image.json"
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Push image to harbor registry') {
             steps {
                 withCredentials([usernamePassword(credentialsId: HARBOR_CREDS, usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASS')]) {
@@ -325,12 +374,20 @@ pipeline {
 
                 sh "docker rmi ${HARBOR_IMAGE} ${HARBOR_IMAGE_LATEST} || true"
 
-                sh "docker image prune -f || true"
+                sh '''
+                    rm -rf trivy-reports/ trufflehog-reports/ zap-reports/ reports/ || true
+                '''
             }
         }
 
         success {
             echo "Pipeline completed successfully! version ${VERSION} is active on K8S and VM"
+
+            sh '''
+                sh "docker image prune -f || true"
+
+                trivy clean --cache || true
+            '''
         }
 
         failure {
