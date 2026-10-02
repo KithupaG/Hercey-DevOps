@@ -180,17 +180,14 @@ pipeline {
                     sh """
                         mkdir -p trivy-reports
 
-                        # Standard JSON export for DefectDojo integration
                         trivy image --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
 
-                        # HTML report for Jenkins publishing
                         trivy image \
                             --format template \
                             --template '@templates/html.tpl' \
                             -o trivy-reports/trivy-image-report.html \
                             ${HARBOR_IMAGE}
 
-                        # CycloneDX SBOM export
                         trivy image --format cyclonedx -o trivy-reports/sbom-image.json ${HARBOR_IMAGE}
                     """
 
@@ -241,7 +238,7 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'defectdojo-api-token', variable: 'DOJO_TOKEN')]) {
                     script {
-                        def dojoUrl = "http://192.168.56.50:8080/api/v2/import-scan"
+                        def dojoUrl = "http://192.168.56.50:8080/api/v2/import-scan/"
                         def productName = "Hercey-Application"
                         def productType = "Research and Development"
                         def engagementName = "CI/CD Automated Scans"
@@ -262,7 +259,7 @@ pipeline {
                             '''
                         }
 
-                        // ADDED: Upload Trivy Filesystem scan findings
+                        // Upload Trivy Filesystem scan findings
                         if (fileExists('trivy-reports/trivy-fs.json')) {
                             echo "Uploading Trivy Filesystem scan to DefectDojo..."
                             sh """
