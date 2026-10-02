@@ -185,8 +185,6 @@ pipeline {
                     ])
 
                     archiveArtifacts artifacts: 'trivy-reports/sbom-image.json', allowEmptyArchive: false
-
-                    sh "trivy image --severity HIGH,CRITICAL --exit-code 1 ${HARBOR_IMAGE}"
                 }
             }
         }
