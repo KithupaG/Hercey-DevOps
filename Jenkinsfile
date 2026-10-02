@@ -146,6 +146,9 @@ pipeline {
                     sh '''
                         mkdir -p trivy-reports
 
+                        # ADDED: Standard JSON export for DefectDojo integration
+                        trivy fs --format json -o trivy-reports/trivy-fs.json .
+
                         trivy fs \
                             --scanners vuln,misconfig,secret,license \
                             --format template \
@@ -256,6 +259,22 @@ pipeline {
                                 -F "auto_create_context=true" \\
                                 -F "close_old_findings=true" \\
                                 -F "file=@trufflehog-reports/results.json"
+                            """
+                        }
+
+                        // ADDED: Upload Trivy Filesystem scan findings
+                        if (fileExists('trivy-reports/trivy-fs.json')) {
+                            echo "Uploading Trivy Filesystem scan to DefectDojo..."
+                            sh """
+                                curl -X POST "${dojoUrl}" \\
+                                -H "Authorization: Token ${DOJO_TOKEN}" \\
+                                -F "scan_type=Trivy Scan" \\
+                                -F "product_name=${productName}" \\
+                                -F "product_type_name=${productType}" \\
+                                -F "engagement_name=${engagementName}" \\
+                                -F "auto_create_context=true" \\
+                                -F "close_old_findings=true" \\
+                                -F "file=@trivy-reports/trivy-fs.json"
                             """
                         }
 
