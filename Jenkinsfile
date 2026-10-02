@@ -92,16 +92,24 @@ pipeline {
             steps {
                 nodejs('NodeJS 20.x') {
                     withSonarQubeEnv('SonarQubeServer') {
-                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main'
+                        // Added sonar.projectKey explicitly so we can query its API afterwards
+                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=hercey-app'
                     }
                 }
             }
         }
 
-        stage('SonarQube Quality Gate') {
+        stage('SonarQube Quality Gate & Export') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
+                }
+                // Fetch SonarQube issues JSON report via API for DefectDojo ingestion
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh '''
+                        mkdir -p sonarqube-reports
+                        curl -s -u "${SONAR_AUTH_TOKEN}:" "${SONAR_HOST_URL}/api/issues/search?componentKeys=hercey-app&ps=500" -o sonarqube-reports/sonar-report.json || true
+                    '''
                 }
             }
         }
@@ -146,7 +154,6 @@ pipeline {
                     sh '''
                         mkdir -p trivy-reports
 
-                        # ADDED: Standard JSON export for DefectDojo integration
                         trivy fs --format json -o trivy-reports/trivy-fs.json .
 
                         trivy fs \
@@ -243,52 +250,78 @@ pipeline {
                         def productType = "Research and Development"
                         def engagementName = "CI/CD Automated Scans"
 
-                        // Upload TruffleHog findings
-                        if (fileExists('trufflehog-reports/results.json')) {
-                            echo "Uploading TruffleHog scan to DefectDojo..."
-                            sh '''
-                                curl -v -X POST "http://192.168.56.50:8080/api/v2/import-scan/" \
-                                -H "Authorization: Token $DOJO_TOKEN" \
-                                -F "scan_type=TruffleHog Scan" \
-                                -F "product_name=Hercey-Application" \
-                                -F "product_type_name=Research and Development" \
-                                -F "engagement_name=CI/CD Automated Scans" \
-                                -F "auto_create_context=true" \
-                                -F "close_old_findings=true" \
-                                -F "file=@trufflehog-reports/results.json"
-                            '''
-                        }
+                        withEnv([
+                            "API_URL=${dojoUrl}",
+                            "PROD_NAME=${productName}",
+                            "PROD_TYPE=${productType}",
+                            "ENG_NAME=${engagementName}"
+                        ]) {
 
-                        // Upload Trivy Filesystem scan findings
-                        if (fileExists('trivy-reports/trivy-fs.json')) {
-                            echo "Uploading Trivy Filesystem scan to DefectDojo..."
-                            sh """
-                                curl -X POST "${dojoUrl}" \\
-                                -H "Authorization: Token ${DOJO_TOKEN}" \\
-                                -F "scan_type=Trivy Scan" \\
-                                -F "product_name=${productName}" \\
-                                -F "product_type_name=${productType}" \\
-                                -F "engagement_name=${engagementName}" \\
-                                -F "auto_create_context=true" \\
-                                -F "close_old_findings=true" \\
-                                -F "file=@trivy-reports/trivy-fs.json"
-                            """
-                        }
+                            // 1. Upload SonarQube Scan
+                            if (fileExists('sonarqube-reports/sonar-report.json')) {
+                                echo "Uploading SonarQube scan to DefectDojo..."
+                                sh '''
+                                    curl -v -X POST "$API_URL" \
+                                    -H "Authorization: Token $DOJO_TOKEN" \
+                                    -F "scan_type=SonarQube Scan" \
+                                    -F "product_name=$PROD_NAME" \
+                                    -F "product_type_name=$PROD_TYPE" \
+                                    -F "engagement_name=$ENG_NAME" \
+                                    -F "auto_create_context=true" \
+                                    -F "close_old_findings=true" \
+                                    -F "file=@sonarqube-reports/sonar-report.json"
+                                '''
+                            }
 
-                        // Upload Trivy Image scan findings
-                        if (fileExists('trivy-reports/trivy-image.json')) {
-                            echo "Uploading Trivy Image scan to DefectDojo..."
-                            sh """
-                                curl -X POST "${dojoUrl}" \\
-                                -H "Authorization: Token ${DOJO_TOKEN}" \\
-                                -F "scan_type=Trivy Scan" \\
-                                -F "product_name=${productName}" \\
-                                -F "product_type_name=${productType}" \\
-                                -F "engagement_name=${engagementName}" \\
-                                -F "auto_create_context=true" \\
-                                -F "close_old_findings=true" \\
-                                -F "file=@trivy-reports/trivy-image.json"
-                            """
+                            // 2. Upload TruffleHog Scan
+                            if (fileExists('trufflehog-reports/results.json')) {
+                                echo "Uploading TruffleHog scan to DefectDojo..."
+                                sh '''
+                                    curl -v -X POST "$API_URL" \
+                                    -H "Authorization: Token $DOJO_TOKEN" \
+                                    -F "scan_type=TruffleHog Scan" \
+                                    -F "product_name=$PROD_NAME" \
+                                    -F "product_type_name=$PROD_TYPE" \
+                                    -F "engagement_name=$ENG_NAME" \
+                                    -F "auto_create_context=true" \
+                                    -F "close_old_findings=true" \
+                                    -F "file=@trufflehog-reports/results.json"
+                                '''
+                            }
+
+                            // 3. Upload Trivy Filesystem Scan (Service: Source Code)
+                            if (fileExists('trivy-reports/trivy-fs.json')) {
+                                echo "Uploading Trivy Filesystem scan to DefectDojo..."
+                                sh '''
+                                    curl -v -X POST "$API_URL" \
+                                    -H "Authorization: Token $DOJO_TOKEN" \
+                                    -F "scan_type=Trivy Scan" \
+                                    -F "service=Source Code FS" \
+                                    -F "product_name=$PROD_NAME" \
+                                    -F "product_type_name=$PROD_TYPE" \
+                                    -F "engagement_name=$ENG_NAME" \
+                                    -F "auto_create_context=true" \
+                                    -F "close_old_findings=true" \
+                                    -F "file=@trivy-reports/trivy-fs.json"
+                                '''
+                            }
+
+                            // 4. Upload Trivy Container Image Scan (Service: Container Image)
+                            if (fileExists('trivy-reports/trivy-image.json')) {
+                                echo "Uploading Trivy Image scan to DefectDojo..."
+                                sh '''
+                                    curl -v -X POST "$API_URL" \
+                                    -H "Authorization: Token $DOJO_TOKEN" \
+                                    -F "scan_type=Trivy Scan" \
+                                    -F "service=Container Image" \
+                                    -F "product_name=$PROD_NAME" \
+                                    -F "product_type_name=$PROD_TYPE" \
+                                    -F "engagement_name=$ENG_NAME" \
+                                    -F "auto_create_context=true" \
+                                    -F "close_old_findings=true" \
+                                    -F "file=@trivy-reports/trivy-image.json"
+                                '''
+                            }
                         }
                     }
                 }
