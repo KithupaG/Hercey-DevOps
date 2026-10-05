@@ -273,34 +273,34 @@ pipeline {
             }
         }
 
-        stage('Deploy WAR file to JBoss EAP VM (With Rollback & Backup)') {
-            steps {
-                sshagent(credentials: ['jboss-vm-ssh-key']) {
-                    script {
-                        try {
-                            echo "Creating backup of current deployment on VM..."
-                            sh "ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} 'cp /tmp/hercey.war /tmp/hercey.war.bak 2>/dev/null || true'"
+        // stage('Deploy WAR file to JBoss EAP VM (With Rollback & Backup)') {
+        //     steps {
+        //         sshagent(credentials: ['jboss-vm-ssh-key']) {
+        //             script {
+        //                 try {
+        //                     echo "Creating backup of current deployment on VM..."
+        //                     sh "ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} 'cp /tmp/hercey.war /tmp/hercey.war.bak 2>/dev/null || true'"
 
-                            echo "Transferring artifact directly into the VM..."
-                            sh "scp -o StrictHostKeyChecking=no ${WAR_PATH} ${VM_USER}@${VM_IP}:/tmp/hercey.war"
+        //                     echo "Transferring artifact directly into the VM..."
+        //                     sh "scp -o StrictHostKeyChecking=no ${WAR_PATH} ${VM_USER}@${VM_IP}:/tmp/hercey.war"
 
-                            echo "Executing deployment using JBoss CLI..."
-                            sh """
-                                ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
-                                "${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war'"
-                            """
-                        } catch (Exception e) {
-                            echo "WARNING: JBoss VM deployment failed! Restoring backup WAR file..."
-                            sh """
-                                ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
-                                "if [ -f /tmp/hercey.war.bak ]; then ${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war.bak'; fi"
-                            """
-                            error "JBoss VM Deployment failed and was rolled back to previous backup: ${e.message}"
-                        }
-                    }
-                }
-            }
-        }
+        //                     echo "Executing deployment using JBoss CLI..."
+        //                     sh """
+        //                         ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
+        //                         "${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war'"
+        //                     """
+        //                 } catch (Exception e) {
+        //                     echo "WARNING: JBoss VM deployment failed! Restoring backup WAR file..."
+        //                     sh """
+        //                         ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
+        //                         "if [ -f /tmp/hercey.war.bak ]; then ${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war.bak'; fi"
+        //                     """
+        //                     error "JBoss VM Deployment failed and was rolled back to previous backup: ${e.message}"
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('DAST Security Scan (OWASP ZAP)') {
             when {
@@ -317,13 +317,13 @@ pipeline {
                         docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.html zap-reports/zap_report_k8s.html || true
                         docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.json zap-reports/zap_report_k8s.json || true
                         docker rm zap_k8s_scan || true
-
-                        # JBoss VM DAST Scan: Added -J to generate JSON report for DefectDojo
-                        docker run --name zap_jboss_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.56.101:8280/hercey-fixed/ -r zap_report_jboss.html -J zap_report_jboss.json -I || true
-                        docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.html zap-reports/zap_report_jboss.html || true
-                        docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.json zap-reports/zap_report_jboss.json || true
-                        docker rm zap_jboss_scan || true
                     '''
+
+                    // # JBoss VM DAST Scan: Added -J to generate JSON report for DefectDojo
+                    // docker run --name zap_jboss_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.56.101:8280/hercey-fixed/ -r zap_report_jboss.html -J zap_report_jboss.json -I || true
+                    // docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.html zap-reports/zap_report_jboss.html || true
+                    // docker cp zap_jboss_scan:/zap/wrk/zap_report_jboss.json zap-reports/zap_report_jboss.json || true
+                    // docker rm zap_jboss_scan || true
 
                     publishHTML([
                         allowMissing: true,
@@ -437,22 +437,51 @@ pipeline {
                             }
 
                             // 6. OWASP ZAP JBoss VM Scan
-                            if (fileExists('zap-reports/zap_report_jboss.json')) {
-                                echo "Uploading OWASP ZAP JBoss VM scan to DefectDojo..."
-                                sh '''
-                                    curl -v -X POST "$API_URL" \
-                                    -H "Authorization: Token $DOJO_TOKEN" \
-                                    -F "scan_type=ZAP Scan" \
-                                    -F "service=JBoss VM DAST" \
-                                    -F "product_name=$PROD_NAME" \
-                                    -F "product_type_name=$PROD_TYPE" \
-                                    -F "engagement_name=$ENG_NAME" \
-                                    -F "auto_create_context=true" \
-                                    -F "close_old_findings=true" \
-                                    -F "file=@zap-reports/zap_report_jboss.json"
-                                '''
-                            }
+                            // if (fileExists('zap-reports/zap_report_jboss.json')) {
+                            //     echo "Uploading OWASP ZAP JBoss VM scan to DefectDojo..."
+                            //     sh '''
+                            //         curl -v -X POST "$API_URL" \
+                            //         -H "Authorization: Token $DOJO_TOKEN" \
+                            //         -F "scan_type=ZAP Scan" \
+                            //         -F "service=JBoss VM DAST" \
+                            //         -F "product_name=$PROD_NAME" \
+                            //         -F "product_type_name=$PROD_TYPE" \
+                            //         -F "engagement_name=$ENG_NAME" \
+                            //         -F "auto_create_context=true" \
+                            //         -F "close_old_findings=true" \
+                            //         -F "file=@zap-reports/zap_report_jboss.json"
+                            //     '''
+                            // }
                         }
+                    }
+                }
+            }
+        }
+        stage('Update GitOps repository') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                        sh '''
+                            # Configure git credentials
+
+                            git config --global user.name "Jenkinsci@local"
+                            git config --global user.email "devops-bot@gmail.lk"
+
+                            # Clone deploy repository
+
+                            git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/KithupaG/K8S-Fleet-Deployment-Repo.git
+                            cd K8S-Fleet-Deployment-Repo/apps/jboss-dev/overlays/dev
+
+                            # Update container image tag
+
+                            kustomize edit set image 192.168.56.50/hercey/jboss-app=192.168.56.50/hercey/jboss-app;${VERSION}
+
+                            # Commit and push back to main branch
+
+                            git add kustomization.yaml
+                            git commit -m "release: update jboss-app image to {$VERSION} [skip ci]"
+                            git push origin main
+                        '''
                     }
                 }
             }
