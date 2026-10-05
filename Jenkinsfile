@@ -165,7 +165,6 @@ pipeline {
                         # Run CycloneDX SBOM scan
                         trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
                     '''
-                }
             }
         }
         stage('Trivy Image Scan & SBOM') {
