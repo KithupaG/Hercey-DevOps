@@ -179,6 +179,24 @@ pipeline {
                 }
             }
         }
+        stage('Generate SBOM') {
+            steps {
+                script {
+                    sh '''
+                        if ! command -v syft &> /dev/null; then
+                            curl -sSfL https://raw.githubusercontent.com/anchore/suft/main/install.sh | sh -s -- - b /tmp
+                            export PATH="/tmp:$PATH"
+                        fi
+
+                        syft 192.168.56.50/hercey/jboss-app:${VERSION} -o table > sbom.txt
+                        cat sbom.txt
+
+                        syft 192.168.56.50/hercey/jboss-app:${VERSION} -o cyclonedx-json=sbom.json
+                    
+                    '''
+                }
+            }
+        }
 
         stage('Trivy Image Scan & SBOM') {
             steps {
@@ -460,7 +478,7 @@ pipeline {
         stage('Update GitOps repository') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                    withCredentials([usernamePassword(credentialsId: 'github-pat-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                         sh '''
                             # Configure git credentials
 
