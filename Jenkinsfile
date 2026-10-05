@@ -184,7 +184,7 @@ pipeline {
                 script {
                     sh '''
                         if ! command -v syft &> /dev/null; then
-                            curl -sSfL https://raw.githubusercontent.com/anchore/suft/main/install.sh | sh -s -- - b /tmp
+                            curl -sSfL https://raw.githubusercontent.com/anchore/suft/main/install.sh | sh -s -- -b /tmp
                             export PATH="/tmp:$PATH"
                         fi
 
@@ -515,7 +515,7 @@ pipeline {
                 echo "Running post-build cleanup..."
                 sh "docker logout ${HARBOR_REGISTRY} || true"
                 sh "docker rmi ${HARBOR_IMAGE} ${HARBOR_IMAGE_LATEST} || true"
-                archiveArtifacts artifact: 'sbom.json, sbom.txt', fingerprint: true, allowEmptyArchive: true
+                archiveArtifacts artifacts: 'sbom.json, sbom.txt', allowEmptyArchive: true
             }
             cleanWs()
         }
