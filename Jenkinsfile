@@ -147,58 +147,21 @@ pipeline {
             }
         }
 
-        stage('Trivy Repository & SCA Scan') {
+        stage('Trivy Security Scan') {
             steps {
-                script {
-                    echo "Trivy Scan (Filesystem)..."
-                    sh '''
-                        mkdir -p trivy-reports
+                sh '''
+                    # JSON report
+                    trivy fs --format json -o trivy-reports/trivy-fs.json .
 
-                        trivy fs --format json -o trivy-reports/trivy-fs.json .
-
-                        trivy fs \
-                            --scanners vuln,misconfig,secret,license \
+                    trivy fs --scanners vuln,misconfig,secret,license \
                             --format template \
-                            --template '@templates/html.tpl' \
+                            --template '@/var/jenkins_home/templates/html.tpl' \
                             -o trivy-reports/trivy-fs-report.html .
 
-                        trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
-                    '''
-
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'trivy-reports',
-                        reportFiles: 'trivy-fs-report.html',
-                        reportName: 'Trivy Repository Scan',
-                        reportTitles: 'FS Security & License Audit'
-                    ])
-
-                    archiveArtifacts artifacts: 'trivy-reports/sbom-source.json', allowEmptyArchive: false
-                }
+                    trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
+                '''
             }
-        }
-        stage('Generate SBOM') {
-            steps {
-                script {
-                    sh '''
-                        # Generate human-readable table output
-                        syft 192.168.56.50/hercey/jboss-app:${VERSION} -o table > sbom.txt
-                        cat sbom.txt
-
-                        # Generate CycloneDX JSON SBOM
-                        syft 192.168.56.50/hercey/jboss-app:${VERSION} -o cyclonedx-json=sbom.json
-                    '''
-
-                    if (fileExists('sbom.txt')) {
-                        def sbomContent = readFile('sbom.txt')
-                        currentBuild.description = "<details><summary><b>View SBOM Packages</b></summary><pre>${sbomContent}</pre></details>"
-                    }
-                }
-            }
-        }
-
+}
         stage('Trivy Image Scan & SBOM') {
             steps {
                 script {
@@ -256,6 +219,25 @@ pipeline {
                         reportName: 'Trivy K8s Cluster Audit',
                         reportTitles: 'Kubernetes Workload Security Audit'
                     ])
+                }
+            }
+        }
+        stage('Generate SBOM') {
+            steps {
+                script {
+                    sh '''
+                        # Generate human-readable table output
+                        syft 192.168.56.50/hercey/jboss-app:${VERSION} -o table > sbom.txt
+                        cat sbom.txt
+
+                        # Generate CycloneDX JSON SBOM
+                        syft 192.168.56.50/hercey/jboss-app:${VERSION} -o cyclonedx-json=sbom.json
+                    '''
+
+                    if (fileExists('sbom.txt')) {
+                        def sbomContent = readFile('sbom.txt')
+                        currentBuild.description = "<details><summary><b>View SBOM Packages</b></summary><pre>${sbomContent}</pre></details>"
+                    }
                 }
             }
         }
