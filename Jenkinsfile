@@ -194,6 +194,9 @@ pipeline {
                         syft 192.168.56.50/hercey/jboss-app:${VERSION} -o cyclonedx-json=sbom.json
                     
                     '''
+
+                    def sbomContent = readFile('sbom.txt')
+                    currentBuild.description = "<details><summary><b>View SBOM Packages</b></summary><pre>${sbomContent}</pre></details>"
                 }
             }
         }
@@ -512,6 +515,7 @@ pipeline {
                 echo "Running post-build cleanup..."
                 sh "docker logout ${HARBOR_REGISTRY} || true"
                 sh "docker rmi ${HARBOR_IMAGE} ${HARBOR_IMAGE_LATEST} || true"
+                archiveArtifacts artifact: 'sbom.json, sbom.txt', fingerprint: true, allowEmptyArchive: true
             }
             cleanWs()
         }
