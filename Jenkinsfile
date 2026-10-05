@@ -183,18 +183,22 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        if ! command -v syft &> /dev/null; then
-                            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp
-                            export PATH="/tmp:$PATH"
+                        if ! command -v trivy &> /dev/null && [ ! -f /tmp/trivy ]; then
+                            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /tmp
                         fi
 
                         export PATH="/tmp:$PATH"
 
-                        syft 192.168.56.50/hercey/jboss-app:${VERSION} -o table > sbom.txt
-                        cat sbom.txt
+                        if [ ! -f /tmp/html.tpl ]; then
+                            curl -sL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -o /tmp/html.tpl
+                        fi
 
-                        syft 192.168.56.50/hercey/jboss-app:${VERSION} -o cyclonedx-json=sbom.json
-                    
+                        mkdir -p trivy-reports
+                        trivy fs --format json -o trivy-reports/trivy-fs.json .
+    
+                        trivy fs --scanners vuln,misconfig,secret,license --format template --template '@/tmp/html.tpl' -o trivy-reports/trivy-fs-report.html .
+    
+                        trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
                     '''
 
                     if(fileExists('sbom.txt')) {
