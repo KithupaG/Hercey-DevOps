@@ -197,8 +197,10 @@ pipeline {
                     
                     '''
 
-                    def sbomContent = readFile('sbom.txt')
-                    currentBuild.description = "<details><summary><b>View SBOM Packages</b></summary><pre>${sbomContent}</pre></details>"
+                    if(fileExists('sbom.txt')) {
+                        def sbomContent = readFile('sbom.txt')
+                        currentBuild.description = "<details><summary><b>View SBOM Packages</b></summary><pre>${sbomContent}</pre></details>"
+                    }
                 }
             }
         }
