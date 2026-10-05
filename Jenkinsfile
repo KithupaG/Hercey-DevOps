@@ -183,25 +183,15 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        if ! command -v trivy &> /dev/null && [ ! -f /tmp/trivy ]; then
-                            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /tmp
-                        fi
+                        # Generate human-readable table output
+                        syft 192.168.56.50/hercey/jboss-app:${VERSION} -o table > sbom.txt
+                        cat sbom.txt
 
-                        export PATH="/tmp:$PATH"
-
-                        if [ ! -f /tmp/html.tpl ]; then
-                            curl -sL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -o /tmp/html.tpl
-                        fi
-
-                        mkdir -p trivy-reports
-                        trivy fs --format json -o trivy-reports/trivy-fs.json .
-    
-                        trivy fs --scanners vuln,misconfig,secret,license --format template --template '@/tmp/html.tpl' -o trivy-reports/trivy-fs-report.html .
-    
-                        trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
+                        # Generate CycloneDX JSON SBOM
+                        syft 192.168.56.50/hercey/jboss-app:${VERSION} -o cyclonedx-json=sbom.json
                     '''
 
-                    if(fileExists('sbom.txt')) {
+                    if (fileExists('sbom.txt')) {
                         def sbomContent = readFile('sbom.txt')
                         currentBuild.description = "<details><summary><b>View SBOM Packages</b></summary><pre>${sbomContent}</pre></details>"
                     }
