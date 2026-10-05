@@ -149,19 +149,25 @@ pipeline {
 
         stage('Trivy Security Scan') {
             steps {
-                sh '''
-                    # JSON report
-                    trivy fs --format json -o trivy-reports/trivy-fs.json .
+                    sh '''
+                        # Create output folder first
+                        mkdir -p trivy-reports
 
-                    trivy fs --scanners vuln,misconfig,secret,license \
-                            --format template \
-                            --template '@/var/jenkins_home/templates/html.tpl' \
-                            -o trivy-reports/trivy-fs-report.html .
+                        # Run JSON scan
+                        trivy fs --format json -o trivy-reports/trivy-fs.json .
 
-                    trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
-                '''
+                        # Run HTML scan (using local offline template)
+                        trivy fs --scanners vuln,misconfig,secret,license \
+                                --format template \
+                                --template '@/var/jenkins_home/templates/html.tpl' \
+                                -o trivy-reports/trivy-fs-report.html .
+
+                        # Run CycloneDX SBOM scan
+                        trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
+                    '''
+                }
             }
-}
+        }
         stage('Trivy Image Scan & SBOM') {
             steps {
                 script {
