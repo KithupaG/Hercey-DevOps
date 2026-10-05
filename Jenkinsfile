@@ -184,9 +184,11 @@ pipeline {
                 script {
                     sh '''
                         if ! command -v syft &> /dev/null; then
-                            curl -sSfL https://raw.githubusercontent.com/anchore/suft/main/install.sh | sh -s -- -b /tmp
+                            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp
                             export PATH="/tmp:$PATH"
                         fi
+
+                        export PATH="/tmp:$PATH"
 
                         syft 192.168.56.50/hercey/jboss-app:${VERSION} -o table > sbom.txt
                         cat sbom.txt
