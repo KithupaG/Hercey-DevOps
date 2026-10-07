@@ -181,7 +181,7 @@ pipeline {
                         trivy image --cache-dir ${TRIVY_CACHE_DIR} --timeout 15m --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
 
                         trivy image \
-                            --cache-dir ${TRIVY_CACHE_DIR}
+                            --cache-dir ${TRIVY_CACHE_DIR} \
                             --format template \
                             --timeout 15m \
                             --template '@templates/html.tpl' \
@@ -206,7 +206,7 @@ pipeline {
                         reportTitles: 'Container Image Security Scan'
                     ])
 
-                    archiveArtifacts artifacts: 'trivy-reports/sbom-image.json, trivy-reports/sbom.txt', allowEmptyArchive: false
+                    archiveArtifacts artifacts: 'trivy-reports/sbom-syft.json, trivy-reports/sbom-trivy.json, trivy-reports/sbom.txt', allowEmptyArchive: false
                 }
             }
         }
