@@ -174,7 +174,7 @@ pipeline {
                     sh """
                         mkdir -p trivy-reports
 
-                        trivy image --timeout 15m --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
+                        trivy image --cache-dir /tmp/trivy-cache --timeout 15m --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
 
                         trivy image \
                             --format template \
