@@ -17,7 +17,7 @@ pipeline {
 
     environment {
         // Trivy DB Cache
-        TRIVY_CACHE_DIR = '/tmp/trivy-cache'
+        TRIVY_CACHE_DIR = '/var/jenkins_home/.cache/trivy'
 
         // Dynamic Versioning
         APP_NAME = 'hercey'
@@ -178,7 +178,7 @@ pipeline {
 
                         syft ${HARBOR_IMAGE} -o cyclonedx-json=trivy-reports/sbom-syft.json
 
-                        trivy --cache-dir ${TRIVY_CACHE_DIR} image --timeout 15m --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
+                        trivy image --cache-dir ${TRIVY_CACHE_DIR} --timeout 15m --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
 
                         trivy image \
                             --cache-dir ${TRIVY_CACHE_DIR}
