@@ -150,10 +150,8 @@ pipeline {
         stage('Trivy Security Scan') {
             steps {
                     sh '''
-                        # Create output folder first
                         mkdir -p trivy-reports
 
-                        # Run JSON scan
                         trivy fs --format json -o trivy-reports/trivy-fs.json .
 
                         # Run HTML scan (using local offline template)
@@ -162,7 +160,6 @@ pipeline {
                                 --template '@/var/jenkins_home/templates/html.tpl' \
                                 -o trivy-reports/trivy-fs-report.html .
 
-                        # Run CycloneDX SBOM scan
                         trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
                     '''
             }
@@ -174,15 +171,16 @@ pipeline {
                     sh """
                         mkdir -p trivy-reports
 
-                        trivy image --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
+                        trivy image --timeout 15m --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
 
                         trivy image \
                             --format template \
+                            --timeout 15m \
                             --template '@templates/html.tpl' \
                             -o trivy-reports/trivy-image-report.html \
                             ${HARBOR_IMAGE}
 
-                        trivy image --format cyclonedx -o trivy-reports/sbom-image.json ${HARBOR_IMAGE}
+                        trivy image --timeout 15m --format cyclonedx -o trivy-reports/sbom-image.json ${HARBOR_IMAGE}
                     """
 
                     publishHTML([
