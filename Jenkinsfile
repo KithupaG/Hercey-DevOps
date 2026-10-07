@@ -490,6 +490,8 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'github-pat-key', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                         sh '''
+                            export PATH="$PATH:/var/jenkins_home/bin"
+
                             git config --global user.name "Jenkinsci@local"
                             git config --global user.email "devops-bot@gmail.lk"
 
