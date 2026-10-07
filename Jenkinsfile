@@ -16,6 +16,9 @@ pipeline {
     }
 
     environment {
+        // Trivy DB Cache
+        TRIVY_CACHE_DIR = '/tmp/trivy-cache'
+
         // Dynamic Versioning
         APP_NAME = 'hercey'
         MAJOR_MINOR = '1.0'
