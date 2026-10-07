@@ -490,21 +490,14 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'github-pat-key', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                         sh '''
-                            # Configure git credentials
-
                             git config --global user.name "Jenkinsci@local"
                             git config --global user.email "devops-bot@gmail.lk"
 
-                            # Clone deploy repository
-
                             git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/KithupaG/K8S-Fleet-Deployment-Repo.git
-                            cd K8S-Fleet-Deployment-Repo/apps/jboss-dev/overlays/dev
+                            cd K8S-Fleet-Deployment-Repo/apps/jboss-app/overlays/dev
 
-                            # Update container image tag
+                            kustomize edit set image 192.168.56.50/hercey/jboss-app=192.168.56.50/hercey/jboss-app:${VERSION}
 
-                            kustomize edit set image 192.168.56.50/hercey/jboss-app=192.168.56.50/hercey/jboss-app;${VERSION}
-
-                            # Commit and push back to main branch
 
                             git add kustomization.yaml
                             git commit -m "release: update jboss-app image to {$VERSION} [skip ci]"
