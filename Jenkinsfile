@@ -167,24 +167,34 @@ pipeline {
                     '''
             }
         }
-        stage('Trivy Image Scan & SBOM') {
+        stage('Image Scan & SBOM') {
             steps {
                 script {
-                    echo "Trivy Scan (Container Image)..."
                     sh """
                         mkdir -p trivy-reports
 
-                        trivy image --cache-dir /tmp/trivy-cache --timeout 15m --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
+                        syft ${HARBOR_IMAGE} -o table > trivy-reports/sbom.txt
+                        cat trivy-reports/sbom.txt
+
+                        syft ${HARBOR_IMAGE} -o cyclonedx-json=trivy-reports/sbom-syft.json
+
+                        trivy --cache-dir ${TRIVY_CACHE_DIR} image --timeout 15m --format json -o trivy-reports/trivy-image.json ${HARBOR_IMAGE}
 
                         trivy image \
+                            --cache-dir ${TRIVY_CACHE_DIR}
                             --format template \
                             --timeout 15m \
                             --template '@templates/html.tpl' \
                             -o trivy-reports/trivy-image-report.html \
                             ${HARBOR_IMAGE}
 
-                        trivy image --timeout 15m --format cyclonedx -o trivy-reports/sbom-image.json ${HARBOR_IMAGE}
-                    """
+                            trivy image --cache-dir ${TRIVY_CACHE_DIR} --timeout 15m --format cyclonedx -o trivy-reports/sbom-trivy.json ${HARBOR_IMAGE}
+                        """
+
+                    if (fileExists('trivy-reports/sbom.txt')) {
+                        def sbomContent = readFile('trivy-reports/sbom.txt')
+                        currentBuild.description = "<details><summary><b>View SBOM Packages</b></summary><pre>${sbomContent}</pre></details>"
+                    }
 
                     publishHTML([
                         allowMissing: false,
@@ -196,7 +206,7 @@ pipeline {
                         reportTitles: 'Container Image Security Scan'
                     ])
 
-                    archiveArtifacts artifacts: 'trivy-reports/sbom-image.json', allowEmptyArchive: false
+                    archiveArtifacts artifacts: 'trivy-reports/sbom-image.json, trivy-reports/sbom.txt', allowEmptyArchive: false
                 }
             }
         }
