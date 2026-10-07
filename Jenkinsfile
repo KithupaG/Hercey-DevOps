@@ -236,28 +236,30 @@ pipeline {
 
         stage('Trivy Kubernetes Audit') {
             steps {
-                script {
-                    echo "Auditing Deployed Workload on Kubernetes Cluster..."
-                    sh '''
-                        mkdir -p trivy-reports
+                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
+                    script {
+                        echo "Auditing Deployed Workload on Kubernetes Cluster..."
+                        sh '''
+                            mkdir -p trivy-reports
 
-                        trivy k8s \
-                            --report summary \
-                            --format template \
-                            --template '@templates/html.tpl' \
-                            -o trivy-reports/trivy-k8s-report.html \
-                            deployment/jboss-app || true
-                    '''
+                            trivy k8s \
+                                --report summary \
+                                --format template \
+                                --template '@templates/html.tpl' \
+                                -o trivy-reports/trivy-k8s-report.html \
+                                deployment/jboss-app || true
+                        '''
 
-                    publishHTML([
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'trivy-reports',
-                        reportFiles: 'trivy-k8s-report.html',
-                        reportName: 'Trivy K8s Cluster Audit',
-                        reportTitles: 'Kubernetes Workload Security Audit'
-                    ])
+                        publishHTML([
+                            allowMissing: true,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: 'trivy-reports',
+                            reportFiles: 'trivy-k8s-report.html',
+                            reportName: 'Trivy K8s Cluster Audit',
+                            reportTitles: 'Kubernetes Workload Security Audit'
+                        ])
+                    }
                 }
             }
         }
@@ -279,16 +281,19 @@ pipeline {
 
         stage('Deploy to Kubernetes (With Rollback)') {
             steps {
-                script {
-                    try {
-                        echo "Deploying image ${HARBOR_IMAGE} to K8S..."
-                        sh "kubectl set image deployment/jboss-app jboss=${HARBOR_IMAGE}"
-                        sh "kubectl rollout status deployment/jboss-app --timeout=60s"
-                    } catch (Exception e) {
-                        echo "WARNING: Kubernetes deployment failed! Initiating automatic rollback..."
-                        sh "kubectl rollout undo deployment/jboss-app"
-                        sh "kubectl rollout status deployment/jboss-app"
-                        error "Kubernetes Deployment failed and was rolled back to previous stable state: ${e.message}"
+                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
+                    script {
+                        sh 'kubectl cluster-info'   // fails fast if the connection is wrong
+                        try {
+                            echo "Deploying image ${HARBOR_IMAGE} to K8S..."
+                            sh "kubectl set image deployment/jboss-app jboss=${HARBOR_IMAGE}"
+                            sh "kubectl rollout status deployment/jboss-app --timeout=60s"
+                        } catch (Exception e) {
+                            echo "WARNING: Kubernetes deployment failed! Initiating automatic rollback..."
+                            sh "kubectl rollout undo deployment/jboss-app"
+                            sh "kubectl rollout status deployment/jboss-app"
+                            error "Kubernetes Deployment failed and was rolled back to previous stable state: ${e.message}"
+                        }
                     }
                 }
             }
