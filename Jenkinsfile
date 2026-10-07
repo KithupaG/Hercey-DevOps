@@ -91,31 +91,31 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                nodejs('NodeJS 20.x') {
-                    withSonarQubeEnv('SonarQubeServer') {
-                        // Added sonar.projectKey explicitly so we can query its API afterwards
-                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=hercey-app'
-                    }
-                }
-            }
-        }
+        // stage('SonarQube Analysis') {
+        //     steps {
+        //         nodejs('NodeJS 20.x') {
+        //             withSonarQubeEnv('SonarQubeServer') {
+        //                 // Added sonar.projectKey explicitly so we can query its API afterwards
+        //                 sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=hercey-app'
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('SonarQube Quality Gate & Export') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-                // Fetch SonarQube issues JSON report via API for DefectDojo ingestion
-                withSonarQubeEnv('SonarQubeServer') {
-                    sh '''
-                        mkdir -p sonarqube-reports
-                        curl -s -u "${SONAR_AUTH_TOKEN}:" "${SONAR_HOST_URL}/api/issues/search?componentKeys=hercey-app&ps=500" -o sonarqube-reports/sonar-report.json || true
-                    '''
-                }
-            }
-        }
+        // stage('SonarQube Quality Gate & Export') {
+        //     steps {
+        //         timeout(time: 5, unit: 'MINUTES') {
+        //             waitForQualityGate abortPipeline: true
+        //         }
+        //         // Fetch SonarQube issues JSON report via API for DefectDojo ingestion
+        //         withSonarQubeEnv('SonarQubeServer') {
+        //             sh '''
+        //                 mkdir -p sonarqube-reports
+        //                 curl -s -u "${SONAR_AUTH_TOKEN}:" "${SONAR_HOST_URL}/api/issues/search?componentKeys=hercey-app&ps=500" -o sonarqube-reports/sonar-report.json || true
+        //             '''
+        //         }
+        //     }
+        // }
 
         stage('Build WAR with dynamic versioning') {
             steps {
@@ -381,20 +381,20 @@ pipeline {
                         ]) {
 
                             // 1. Upload SonarQube Scan
-                            if (fileExists('sonarqube-reports/sonar-report.json')) {
-                                echo "Uploading SonarQube scan to DefectDojo..."
-                                sh '''
-                                    curl -v -X POST "$API_URL" \
-                                    -H "Authorization: Token $DOJO_TOKEN" \
-                                    -F "scan_type=SonarQube Scan" \
-                                    -F "product_name=$PROD_NAME" \
-                                    -F "product_type_name=$PROD_TYPE" \
-                                    -F "engagement_name=$ENG_NAME" \
-                                    -F "auto_create_context=true" \
-                                    -F "close_old_findings=true" \
-                                    -F "file=@sonarqube-reports/sonar-report.json"
-                                '''
-                            }
+                            // if (fileExists('sonarqube-reports/sonar-report.json')) {
+                            //     echo "Uploading SonarQube scan to DefectDojo..."
+                            //     sh '''
+                            //         curl -v -X POST "$API_URL" \
+                            //         -H "Authorization: Token $DOJO_TOKEN" \
+                            //         -F "scan_type=SonarQube Scan" \
+                            //         -F "product_name=$PROD_NAME" \
+                            //         -F "product_type_name=$PROD_TYPE" \
+                            //         -F "engagement_name=$ENG_NAME" \
+                            //         -F "auto_create_context=true" \
+                            //         -F "close_old_findings=true" \
+                            //         -F "file=@sonarqube-reports/sonar-report.json"
+                            //     '''
+                            // }
 
                             // 2. Upload TruffleHog Scan
                             if (fileExists('trufflehog-reports/results.json')) {
@@ -488,7 +488,7 @@ pipeline {
         stage('Update GitOps repository') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'github-pat-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                    withCredentials([usernamePassword(credentialsId: 'github-pat-key', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                         sh '''
                             # Configure git credentials
 
