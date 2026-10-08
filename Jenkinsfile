@@ -498,7 +498,7 @@ pipeline {
                             git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/KithupaG/K8S-Fleet-Deployment-Repo.git
                             cd K8S-Fleet-Deployment-Repo/apps/jboss-app/overlays/dev
 
-                            kustomize edit set image 192.168.56.50/hercey/jboss-app=192.168.56.50/hercey/jboss-app:${VERSION}
+                            kustomize edit set image 192.168.56.50/hercey/jboss-app=${HARBOR_IMAGE}
 
 
                             git add kustomization.yaml
