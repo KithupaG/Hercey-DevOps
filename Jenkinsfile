@@ -46,9 +46,9 @@ pipeline {
 
     parameters {
         booleanParam(
-            name: 'RUN_DAST',
-            defaultValue: false,
-            description: 'Check this box to execute the OWASP ZAP DAST scan'
+            name: 'RUN_DAST', defaultValue: false, description: 'Check this box to execute the OWASP ZAP DAST scan',
+            name: 'HEALTH_TEST', defaultValue: false, description: 'Check this box to ensure that the application health test is performed before running DAST scan (must check DAST scan to work)',
+            name: 'UPLOAD_SCAN', defaultValue: false, defaultValue: 'Check this box to ensure the scanned reports are sent to DefectDojo'
         )
     }
 
@@ -279,26 +279,6 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes (With Rollback)') {
-            steps {
-                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
-                    script {
-                        sh 'kubectl cluster-info'   // fails fast if the connection is wrong
-                        try {
-                            echo "Deploying image ${HARBOR_IMAGE} to K8S..."
-                            sh "kubectl set image deployment/jboss-app jboss=${HARBOR_IMAGE}"
-                            sh "kubectl rollout status deployment/jboss-app --timeout=60s"
-                        } catch (Exception e) {
-                            echo "WARNING: Kubernetes deployment failed! Initiating automatic rollback..."
-                            sh "kubectl rollout undo deployment/jboss-app"
-                            sh "kubectl rollout status deployment/jboss-app"
-                            error "Kubernetes Deployment failed and was rolled back to previous stable state: ${e.message}"
-                        }
-                    }
-                }
-            }
-        }
-
         // stage('Deploy WAR file to JBoss EAP VM (With Rollback & Backup)') {
         //     steps {
         //         sshagent(credentials: ['jboss-vm-ssh-key']) {
@@ -328,9 +308,61 @@ pipeline {
         //     }
         // }
 
+        stage('Update GitOps repository') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'github-pat-key', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                        sh '''
+                            export PATH="$PATH:/var/jenkins_home/bin"
+
+                            git config --global user.name "Jenkinsci@local"
+                            git config --global user.email "devops-bot@gmail.lk"
+
+                            git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/KithupaG/K8S-Fleet-Deployment-Repo.git
+                            cd K8S-Fleet-Deployment-Repo/apps/jboss-app/overlays/dev
+
+                            kustomize edit set image 192.168.56.50/hercey/jboss-app=${HARBOR_IMAGE}
+
+
+                            git add kustomization.yaml
+                            git commit -m "release: update jboss-app image to {$VERSION} [skip ci]"
+                            git push origin main
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Wait for App Readiness') {
+            when {
+                expression { return params.HEALTH_TEST == true && params.RUN_DAST == true }
+            }
+            steps {
+                script {
+                    sh '''
+                        APP_URL="http://192.168.56.1/health
+                        MAX_ATTEMPTS=30
+                        ATTEMPT=1
+
+                        echo "Waiting for application to become healthy"
+
+                        until [ $(curl -s -o /dev.null -w "%{http_code}" ${APP_URL}) -eq 200 ]; do
+                            if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+                                echo "Error: Application failed to become healthy."
+                                exit 1
+                            fi
+                            echo "App not ready yet. Retrying in 10s..."
+                            sleep 10
+                        done
+                        echo "Application is UP and HEALTHY! Proceeding towards DAST scan."
+                    '''
+                }
+            }
+        }
+
         stage('DAST Security Scan (OWASP ZAP)') {
             when {
-                expression { return params.RUN_DAST == true }
+                expression { return params.RUN_DAST == true && params.HEALTH_TEST == true }
             }
             steps {
                 script {
@@ -365,6 +397,9 @@ pipeline {
         }
 
         stage('Upload findings to DefectDojo') {
+            when {
+                expression { return params.UPLOAD_SCAN == true }
+            }
             steps {
                 withCredentials([string(credentialsId: 'defectdojo-api-token', variable: 'DOJO_TOKEN')]) {
                     script {
@@ -480,31 +515,6 @@ pipeline {
                             //     '''
                             // }
                         }
-                    }
-                }
-            }
-        }
-
-        stage('Update GitOps repository') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'github-pat-key', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
-                        sh '''
-                            export PATH="$PATH:/var/jenkins_home/bin"
-
-                            git config --global user.name "Jenkinsci@local"
-                            git config --global user.email "devops-bot@gmail.lk"
-
-                            git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/KithupaG/K8S-Fleet-Deployment-Repo.git
-                            cd K8S-Fleet-Deployment-Repo/apps/jboss-app/overlays/dev
-
-                            kustomize edit set image 192.168.56.50/hercey/jboss-app=${HARBOR_IMAGE}
-
-
-                            git add kustomization.yaml
-                            git commit -m "release: update jboss-app image to {$VERSION} [skip ci]"
-                            git push origin main
-                        '''
                     }
                 }
             }
