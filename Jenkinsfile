@@ -42,13 +42,26 @@ pipeline {
         VM_USER = 'root'
         WAR_PATH = "target/${APP_NAME}.war"
         JBOSS_CLI = '/opt/jboss/jboss-eap-8.0/bin/jboss-cli.sh'
+
+        // URL used by BOTH the readiness check and the DAST scan
+        APP_URL = 'http://192.168.127.2:30080/hercey/'
     }
 
     parameters {
         booleanParam(
-            name: 'RUN_DAST', defaultValue: false, description: 'Check this box to execute the OWASP ZAP DAST scan',
-            name: 'HEALTH_TEST', defaultValue: false, description: 'Check this box to ensure that the application health test is performed before running DAST scan (must check DAST scan to work)',
-            name: 'UPLOAD_SCAN', defaultValue: false, defaultValue: 'Check this box to ensure the scanned reports are sent to DefectDojo'
+            name: 'RUN_DAST',
+            defaultValue: false,
+            description: 'Check this box to execute the OWASP ZAP DAST scan'
+        )
+        booleanParam(
+            name: 'HEALTH_TEST',
+            defaultValue: false,
+            description: 'Check this box to run the application health test before the DAST scan (only runs together with RUN_DAST)'
+        )
+        booleanParam(
+            name: 'UPLOAD_SCAN',
+            defaultValue: false,
+            description: 'Check this box to send the scan reports to DefectDojo'
         )
     }
 
@@ -152,27 +165,22 @@ pipeline {
 
         stage('Trivy Security Scan') {
             steps {
-                    sh '''
-                        mkdir -p trivy-reports
+                sh '''
+                    mkdir -p trivy-reports
 
-                        trivy fs --format json -o trivy-reports/trivy-fs.json .
+                    trivy fs --format json -o trivy-reports/trivy-fs.json .
 
-                        # Run HTML scan (using local offline template)
-                        trivy fs --scanners vuln,misconfig,secret,license \
-                                --format template \
-                                --template '@/var/jenkins_home/templates/html.tpl' \
-                                -o trivy-reports/trivy-fs-report.html .
+                    # Run HTML scan (using local offline template)
+                    trivy fs --scanners vuln,misconfig,secret,license \
+                            --format template \
+                            --template '@/var/jenkins_home/templates/html.tpl' \
+                            -o trivy-reports/trivy-fs-report.html .
 
-                        trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
-                    '''
+                    trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
+                '''
             }
         }
 
-        // ---------------------------------------------------------------
-        // CHANGED: SBOM files now go to sbom-reports/, plus an HTML view.
-        // The separate "Generate SBOM" stage was removed (it used the
-        // wrong image name and duplicated this stage).
-        // ---------------------------------------------------------------
         stage('Image Scan & SBOM') {
             steps {
                 script {
@@ -234,42 +242,12 @@ pipeline {
             }
         }
 
-        stage('Trivy Kubernetes Audit') {
-            steps {
-                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
-                    script {
-                        echo "Auditing Deployed Workload on Kubernetes Cluster..."
-                        sh '''
-                            mkdir -p trivy-reports
-
-                            trivy k8s \
-                                --report summary \
-                                --format template \
-                                --template '@templates/html.tpl' \
-                                -o trivy-reports/trivy-k8s-report.html \
-                                deployment/jboss-app || true
-                        '''
-
-                        publishHTML([
-                            allowMissing: true,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'trivy-reports',
-                            reportFiles: 'trivy-k8s-report.html',
-                            reportName: 'Trivy K8s Cluster Audit',
-                            reportTitles: 'Kubernetes Workload Security Audit'
-                        ])
-                    }
-                }
-            }
-        }
-
         stage('Push image to harbor registry') {
             steps {
                 withCredentials([usernamePassword(credentialsId: HARBOR_CREDS, usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASS')]) {
                     script {
                         echo "Authenticating with harbor registry..."
-                        sh "echo '$HARBOR_PASS' | docker login ${HARBOR_REGISTRY} -u '$HARBOR_USER' --password-stdin"
+                        sh 'echo "$HARBOR_PASS" | docker login "$HARBOR_REGISTRY" -u "$HARBOR_USER" --password-stdin'
 
                         echo "Pushing images to Harbor..."
                         sh "docker push ${HARBOR_IMAGE}"
@@ -318,16 +296,68 @@ pipeline {
                             git config --global user.name "Jenkinsci@local"
                             git config --global user.email "devops-bot@gmail.lk"
 
+                            rm -rf K8S-Fleet-Deployment-Repo
                             git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/KithupaG/K8S-Fleet-Deployment-Repo.git
                             cd K8S-Fleet-Deployment-Repo/apps/jboss-app/overlays/dev
 
                             kustomize edit set image 192.168.56.50/hercey/jboss-app=${HARBOR_IMAGE}
 
+                            echo "--- resulting images block ---"
+                            grep -A4 'images:' kustomization.yaml
 
                             git add kustomization.yaml
-                            git commit -m "release: update jboss-app image to {$VERSION} [skip ci]"
+                            git commit -m "release: update jboss-app image to ${VERSION} [skip ci]"
                             git push origin main
                         '''
+                    }
+                }
+            }
+        }
+
+        stage('Wait for Fleet rollout') {
+            steps {
+                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh '''
+                        CUR=""
+                        for i in $(seq 1 30); do
+                            CUR=$(kubectl get deploy jboss-app -n default -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
+                            [ "$CUR" = "$HARBOR_IMAGE" ] && break
+                            echo "Waiting for Fleet to apply $HARBOR_IMAGE (currently: $CUR)"
+                            sleep 10
+                        done
+                        [ "$CUR" = "$HARBOR_IMAGE" ] || { echo "Fleet did not apply the new image in time"; exit 1; }
+
+                        kubectl rollout status deployment/jboss-app -n default --timeout=300s
+                    '''
+                }
+            }
+        }
+
+        stage('Trivy Kubernetes Audit') {
+            steps {
+                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
+                    script {
+                        echo "Auditing Deployed Workload on Kubernetes Cluster..."
+                        sh '''
+                            mkdir -p trivy-reports
+
+                            trivy k8s \
+                                --report summary \
+                                --format template \
+                                --template '@templates/html.tpl' \
+                                -o trivy-reports/trivy-k8s-report.html \
+                                deployment/jboss-app || true
+                        '''
+
+                        publishHTML([
+                            allowMissing: true,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: 'trivy-reports',
+                            reportFiles: 'trivy-k8s-report.html',
+                            reportName: 'Trivy K8s Cluster Audit',
+                            reportTitles: 'Kubernetes Workload Security Audit'
+                        ])
                     }
                 }
             }
@@ -338,40 +368,47 @@ pipeline {
                 expression { return params.HEALTH_TEST == true && params.RUN_DAST == true }
             }
             steps {
-                script {
-                    sh '''
-                        APP_URL="http://192.168.56.1/health
-                        MAX_ATTEMPTS=30
-                        ATTEMPT=1
+                sh '''
+                    MAX_ATTEMPTS=30
+                    ATTEMPT=1
 
-                        echo "Waiting for application to become healthy"
+                    echo "Waiting for $APP_URL to become healthy..."
 
-                        until [ $(curl -s -o /dev.null -w "%{http_code}" ${APP_URL}) -eq 200 ]; do
-                            if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
-                                echo "Error: Application failed to become healthy."
-                                exit 1
-                            fi
-                            echo "App not ready yet. Retrying in 10s..."
-                            sleep 10
-                        done
-                        echo "Application is UP and HEALTHY! Proceeding towards DAST scan."
-                    '''
-                }
+                    while true; do
+                        CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$APP_URL" || true)
+                        case "$CODE" in
+                            2*|3*)
+                                echo "Application is UP and HEALTHY (HTTP $CODE). Proceeding to the DAST scan."
+                                exit 0
+                                ;;
+                        esac
+                        if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
+                            echo "Error: application did not become healthy (last HTTP code: $CODE)."
+                            exit 1
+                        fi
+                        echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: HTTP $CODE, retrying in 10s..."
+                        ATTEMPT=$((ATTEMPT + 1))
+                        sleep 10
+                    done
+                '''
             }
         }
 
         stage('DAST Security Scan (OWASP ZAP)') {
             when {
-                expression { return params.RUN_DAST == true && params.HEALTH_TEST == true }
+                expression { return params.RUN_DAST == true }
             }
             steps {
                 script {
-                    echo "Executing OWASP ZAP Baseline Scan..."
+                    echo "Executing OWASP ZAP Baseline Scan against ${APP_URL}..."
                     sh '''
                         mkdir -p zap-reports
 
-                        # K8s DAST Scan: Added -J to generate JSON report for DefectDojo
-                        docker run --name zap_k8s_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://192.168.127.2:30080/hercey/ -r zap_report_k8s.html -J zap_report_k8s.json -I || true
+                        # remove a leftover container from a previous failed run
+                        docker rm -f zap_k8s_scan || true
+
+                        # K8s DAST Scan: -J generates JSON for DefectDojo
+                        docker run --name zap_k8s_scan -u root -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t "$APP_URL" -r zap_report_k8s.html -J zap_report_k8s.json -I || true
                         docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.html zap-reports/zap_report_k8s.html || true
                         docker cp zap_k8s_scan:/zap/wrk/zap_report_k8s.json zap-reports/zap_report_k8s.json || true
                         docker rm zap_k8s_scan || true
@@ -388,9 +425,9 @@ pipeline {
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'zap-reports',
-                        reportFiles: 'zap_report_k8s.html,zap_report_jboss.html',
+                        reportFiles: 'zap_report_k8s.html',
                         reportName: 'OWASP ZAP DAST Reports',
-                        reportTitles: 'Kubernetes Scan, JBoss VM Scan'
+                        reportTitles: 'Kubernetes Scan'
                     ])
                 }
             }
@@ -532,7 +569,7 @@ pipeline {
         }
 
         success {
-            echo "Pipeline completed successfully! Version ${VERSION} is active on K8S and VM"
+            echo "Pipeline completed successfully! Version ${VERSION} is active on K8S"
             sh '''
                 docker image prune -f || true
                 trivy clean --cache || true
