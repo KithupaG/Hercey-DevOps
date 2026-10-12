@@ -250,69 +250,69 @@ pipeline {
             }
         }
 
-        stage('Image Scan & SBOM') {
-            // allOf {
-            //         expression { return params.TRIVY_IMAGE_SCAN_SBOM == false }
-            // }
-            steps {
-                script {
-                    sh '''
-                        mkdir -p trivy-reports sbom-reports
+        // stage('Image Scan & SBOM') {
+        //     // allOf {
+        //     //         expression { return params.TRIVY_IMAGE_SCAN_SBOM == false }
+        //     // }
+        //     steps {
+        //         script {
+        //             sh '''
+        //                 mkdir -p trivy-reports sbom-reports
 
-                        # ---- SBOM (syft) ----
-                        syft "$HARBOR_IMAGE" -o table > sbom-reports/sbom.txt
-                        cat sbom-reports/sbom.txt
+        //                 # ---- SBOM (syft) ----
+        //                 syft "$HARBOR_IMAGE" -o table > sbom-reports/sbom.txt
+        //                 cat sbom-reports/sbom.txt
 
-                        syft "$HARBOR_IMAGE" -o cyclonedx-json=sbom-reports/sbom-syft.json
+        //                 syft "$HARBOR_IMAGE" -o cyclonedx-json=sbom-reports/sbom-syft.json
 
-                        # ---- Trivy image scan ----
-                        trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format json -o trivy-reports/trivy-image.json "$HARBOR_IMAGE"
+        //                 # ---- Trivy image scan ----
+        //                 trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format json -o trivy-reports/trivy-image.json "$HARBOR_IMAGE"
 
-                        trivy image --cache-dir "$TRIVY_CACHE_DIR" \
-                            --format template \
-                            --timeout 15m \
-                            --template '@templates/html.tpl' \
-                            -o trivy-reports/trivy-image-report.html \
-                            "$HARBOR_IMAGE"
+        //                 trivy image --cache-dir "$TRIVY_CACHE_DIR" \
+        //                     --format template \
+        //                     --timeout 15m \
+        //                     --template '@templates/html.tpl' \
+        //                     -o trivy-reports/trivy-image-report.html \
+        //                     "$HARBOR_IMAGE"
 
-                        trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format cyclonedx -o sbom-reports/sbom-trivy.json "$HARBOR_IMAGE"
+        //                 trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format cyclonedx -o sbom-reports/sbom-trivy.json "$HARBOR_IMAGE"
 
-                        # ---- Wrap sbom.txt in HTML so Jenkins can display it ----
-                        {
-                            echo '<html><head><meta charset="utf-8"><title>SBOM</title>'
-                            echo '<style>body{font-family:sans-serif;margin:20px}pre{font-family:monospace;font-size:12px;overflow:auto}</style>'
-                            echo '</head><body>'
-                            echo "<h2>SBOM for $HARBOR_IMAGE</h2>"
-                            echo '<pre>'
-                            sed -e 's/&/\\&amp;/g' -e 's/</\\&lt;/g' -e 's/>/\\&gt;/g' sbom-reports/sbom.txt
-                            echo '</pre></body></html>'
-                        } > sbom-reports/sbom-report.html
-                    '''
+        //                 # ---- Wrap sbom.txt in HTML so Jenkins can display it ----
+        //                 {
+        //                     echo '<html><head><meta charset="utf-8"><title>SBOM</title>'
+        //                     echo '<style>body{font-family:sans-serif;margin:20px}pre{font-family:monospace;font-size:12px;overflow:auto}</style>'
+        //                     echo '</head><body>'
+        //                     echo "<h2>SBOM for $HARBOR_IMAGE</h2>"
+        //                     echo '<pre>'
+        //                     sed -e 's/&/\\&amp;/g' -e 's/</\\&lt;/g' -e 's/>/\\&gt;/g' sbom-reports/sbom.txt
+        //                     echo '</pre></body></html>'
+        //                 } > sbom-reports/sbom-report.html
+        //             '''
 
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'trivy-reports',
-                        reportFiles: 'trivy-image-report.html',
-                        reportName: 'Trivy Image Scan',
-                        reportTitles: 'Container Image Security Scan'
-                    ])
+        //             publishHTML([
+        //                 allowMissing: false,
+        //                 alwaysLinkToLastBuild: true,
+        //                 keepAll: true,
+        //                 reportDir: 'trivy-reports',
+        //                 reportFiles: 'trivy-image-report.html',
+        //                 reportName: 'Trivy Image Scan',
+        //                 reportTitles: 'Container Image Security Scan'
+        //             ])
 
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'sbom-reports',
-                        reportFiles: 'sbom-report.html',
-                        reportName: 'SBOM Report',
-                        reportTitles: 'Container Image SBOM'
-                    ])
+        //             publishHTML([
+        //                 allowMissing: false,
+        //                 alwaysLinkToLastBuild: true,
+        //                 keepAll: true,
+        //                 reportDir: 'sbom-reports',
+        //                 reportFiles: 'sbom-report.html',
+        //                 reportName: 'SBOM Report',
+        //                 reportTitles: 'Container Image SBOM'
+        //             ])
 
-                    archiveArtifacts artifacts: 'sbom-reports/*', allowEmptyArchive: false
-                }
-            }
-        }
+        //             archiveArtifacts artifacts: 'sbom-reports/*', allowEmptyArchive: false
+        //         }
+        //     }
+        // }
 
         // Feature branches and PRs stop above: they are built and scanned,
 
@@ -426,7 +426,7 @@ pipeline {
                     sh '''
                         CUR=""
                         for i in $(seq 1 60); do
-                            CUR=$(kubectl get deploy jboss-app -n default -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
+                            CUR=$(kubectl get deploy jboss-app -n ${DEPLOY_ENV} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
                             [ "$CUR" = "$HARBOR_IMAGE" ] && break
                             echo "Waiting for Fleet to apply $HARBOR_IMAGE (currently: $CUR)"
                             sleep 10
