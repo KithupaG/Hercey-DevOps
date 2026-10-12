@@ -41,14 +41,59 @@ pipeline {
     }
 
     parameters {
+        // booleanParam(
+        //     name: 'SOURCE_CODE_SCANNING',
+        //     defaultValue: true,
+        //     description: 'Disable to stop SCM scan'
+        // )
+        // booleanParam(
+        //     name: 'SECRET_SCANNING',
+        //     defaultValue: true,
+        //     description: 'Disable to stop trufflehog secret scan'
+        // )
+        // booleanParam(
+        //     name: 'SONARQUBE_ANALYSIS',
+        //     defaultValue: true,
+        //     description: 'Disable to stop sonarqube scan'
+        // )
+        // booleanParam(
+        //     name: 'SONARQUBE_QUALITY_GATE',
+        //     defaultValue: true,
+        //     description: 'Disable to stop sonarqube quality gate'
+        // )
+        // booleanParam(
+        //     name: 'BUILD_WAR',
+        //     defaultValue: true,
+        //     description: 'Disable to stop building of the war file'
+        // )
+        // booleanParam(
+        //     name: 'TRIVY_SECURITY_SCAN',
+        //     defaultValue: true,
+        //     description: 'Disable to stop trivy SCA scan'
+        // )
+        // booleanParam(
+        //     name: 'BUILD_DOCKER_IMAGE',
+        //     defaultValue: true,
+        //     description: 'Disable to stop docker image being built'
+        // )
+        // booleanParam(
+        //     name: 'TRIVY_IMAGE_SCAN_SBOM',
+        //     defaultValue: true,
+        //     description: 'Disable to stop trivy from scanning your image and generating an SBOM'
+        // )
+        // booleanParam(
+        //     name: 'TRIVY_KUBERNETES_SCAN',
+        //     defaultValue: true,
+        //     description: 'Disable to stop trivy from scanning kubernetes manifest files'
+        // )
         booleanParam(
             name: 'RUN_DAST',
-            defaultValue: false,
+            defaultValue: true,
             description: 'Check this box to execute the OWASP ZAP DAST scan'
         )
         booleanParam(
             name: 'HEALTH_TEST',
-            defaultValue: false,
+            defaultValue: true,
             description: 'Check this box to run the application health test before the DAST scan'
         )
     }
@@ -88,12 +133,18 @@ pipeline {
         }
 
         stage('Checkout Source Code') {
+            // allOf {
+            //         expression { return params.SOURCE_CODE_SCANNING == false }
+            // }
             steps {
                 checkout scm
             }
         }
 
         stage('Secret Scanning (TruffleHog)') {
+            // allOf {
+            //         expression { return params.SECRET_SCANNING == false }
+            // }
             steps {
                 script {
                     echo "Scanning repository for leaked credentials with TruffleHog..."
@@ -126,10 +177,12 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
+            // allOf {
+            //         expression { return params.SECRET_SCANNING == false }
+            // }
             steps {
                 nodejs('NodeJS 20.x') {
                     withSonarQubeEnv('SonarQubeServer') {
-                        // key: letters/digits/-/_/. only. name: free text.
                         sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
                     }
                 }
@@ -137,6 +190,9 @@ pipeline {
         }
 
         stage('SonarQube Quality Gate') {
+            // allOf {
+            //         expression { return params.SECRET_ANALYSIS == false }
+            // }
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     script {
@@ -154,6 +210,9 @@ pipeline {
         }
 
         stage('Build WAR with dynamic versioning') {
+            // allOf {
+            //         expression { return params.BUILD_WAR == false }
+            // }
             steps {
                 echo "Building artifact version: ${env.VERSION}"
                 sh 'mvn clean package -DskipTests -Drevision=$VERSION'
@@ -161,6 +220,9 @@ pipeline {
         }
 
         stage('Trivy Security Scan') {
+            // allOf {
+            //         expression { return params.TRIVY_SECURITY_SCAN == false }
+            // }
             steps {
                 sh '''
                     mkdir -p trivy-reports
@@ -179,6 +241,9 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            // allOf {
+            //         expression { return params.BUILD_DOCKER_IMAGE == false }
+            // }
             steps {
                 echo "Building custom WildFly Docker image: ${env.HARBOR_IMAGE}"
                 sh 'docker build -t "$HARBOR_IMAGE" .'
@@ -186,6 +251,9 @@ pipeline {
         }
 
         stage('Image Scan & SBOM') {
+            // allOf {
+            //         expression { return params.TRIVY_IMAGE_SCAN_SBOM == false }
+            // }
             steps {
                 script {
                     sh '''
@@ -365,7 +433,7 @@ pipeline {
                         done
                         [ "$CUR" = "$HARBOR_IMAGE" ] || { echo "Fleet did not apply the new image in time"; exit 1; }
 
-                        kubectl rollout status deployment/jboss-app -n default --timeout=300s
+                        kubectl rollout status deployment/jboss-app -n ${DEPLOY_ENV} --timeout=300s
                     '''
                 }
             }
@@ -410,7 +478,7 @@ pipeline {
         stage('Wait for App Readiness') {
             when {
                 allOf {
-                    expression { return params.HEALTH_TEST == true }
+                    expression { return params.HEALTH_TEST == false }
                 }
                 anyOf {
                     branch 'staging'
@@ -447,7 +515,7 @@ pipeline {
         stage('DAST Security Scan (OWASP ZAP)') {
             when {
                 allOf {
-                    expression { return params.RUN_DAST == true }
+                    expression { return params.RUN_DAST == false }
                 }
                 anyOf {
                     branch 'staging'
