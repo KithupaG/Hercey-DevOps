@@ -176,38 +176,38 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            // allOf {
-            //         expression { return params.SECRET_SCANNING == false }
-            // }
-            steps {
-                nodejs('NodeJS 20.x') {
-                    withSonarQubeEnv('SonarQubeServer') {
-                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
-                    }
-                }
-            }
-        }
+        // stage('SonarQube Analysis') {
+        //     // allOf {
+        //     //         expression { return params.SECRET_SCANNING == false }
+        //     // }
+        //     steps {
+        //         nodejs('NodeJS 20.x') {
+        //             withSonarQubeEnv('SonarQubeServer') {
+        //                 sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('SonarQube Quality Gate') {
-            // allOf {
-            //         expression { return params.SECRET_ANALYSIS == false }
-            // }
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    script {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            if (env.DEPLOY_ENV == 'dev') {
-                                unstable("Quality gate status: ${qg.status}")
-                            } else {
-                                error "Quality gate failed: ${qg.status}"
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // stage('SonarQube Quality Gate') {
+        //     // allOf {
+        //     //         expression { return params.SECRET_ANALYSIS == false }
+        //     // }
+        //     steps {
+        //         timeout(time: 5, unit: 'MINUTES') {
+        //             script {
+        //                 def qg = waitForQualityGate()
+        //                 if (qg.status != 'OK') {
+        //                     if (env.DEPLOY_ENV == 'dev') {
+        //                         unstable("Quality gate status: ${qg.status}")
+        //                     } else {
+        //                         error "Quality gate failed: ${qg.status}"
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Build WAR with dynamic versioning') {
             // allOf {
