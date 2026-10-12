@@ -36,10 +36,8 @@ pipeline {
         VM_USER   = 'root'
         JBOSS_CLI = '/opt/jboss/jboss-eap-8.0/bin/jboss-cli.sh'
 
-        // DAST target (and, for now, the readiness-check URL)
-        APP_URL = 'http://192.168.127.2:30080/hercey/'
-        // switch to .../hercey/health once the /health servlet is confirmed working
-        APP_HEALTH_URL = 'http://192.168.127.2:30080/hercey/'
+        APP_URL = ' http://host.docker.internal:30080/hercey/'
+        APP_HEALTH_URL = ' http://host.docker.internal:30080/hercey/health'
     }
 
     parameters {
@@ -51,7 +49,7 @@ pipeline {
         booleanParam(
             name: 'HEALTH_TEST',
             defaultValue: false,
-            description: 'Check this box to run the application health test before the DAST scan (only runs together with RUN_DAST)'
+            description: 'Check this box to run the application health test before the DAST scan'
         )
     }
 
@@ -60,8 +58,8 @@ pipeline {
             steps {
                 script {
                     def configs = [
-                        dev    : [harborProject: 'hercey-dev',     harborCreds: 'jenkins-dev-robot',     nexusRepo: 'hercey-dev',      nexusCreds: 'nexus-dev-credentials',     versionSuffix: '-SNAPSHOT', tagPrefix: 'dev-'],
-                        staging: [harborProject: 'hercey-staging', harborCreds: 'jenkins-staging-robot', nexusRepo: 'hercey-staging',  nexusCreds: 'nexus-staging-credentials', versionSuffix: '-rc',       tagPrefix: 'staging-'],
+                        dev    : [harborProject: 'hercey-dev',     harborCreds: 'jenkins-dev-robot',     nexusRepo: 'hercey-dev',      nexusCreds: 'nexus-credentials',     versionSuffix: '-SNAPSHOT', tagPrefix: 'dev-'],
+                        staging: [harborProject: 'hercey-staging', harborCreds: 'jenkins-staging-robot', nexusRepo: 'hercey-staging',  nexusCreds: 'nexus-credentials', versionSuffix: '-rc',       tagPrefix: 'staging-'],
                         prod   : [harborProject: 'hercey',         harborCreds: 'jenkins-robot',         nexusRepo: 'hercey-releases', nexusCreds: 'nexus-credentials',         versionSuffix: '',          tagPrefix: '']
                     ]
 
