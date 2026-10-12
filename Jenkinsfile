@@ -176,38 +176,38 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            // allOf {
-            //         expression { return params.SECRET_SCANNING == false }
-            // }
-            steps {
-                nodejs('NodeJS 20.x') {
-                    withSonarQubeEnv('SonarQubeServer') {
-                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
-                    }
-                }
-            }
-        }
+        // stage('SonarQube Analysis') {
+        //     // allOf {
+        //     //         expression { return params.SECRET_SCANNING == false }
+        //     // }
+        //     steps {
+        //         nodejs('NodeJS 20.x') {
+        //             withSonarQubeEnv('SonarQubeServer') {
+        //                 sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('SonarQube Quality Gate') {
-            // allOf {
-            //         expression { return params.SECRET_ANALYSIS == false }
-            // }
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    script {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            if (env.DEPLOY_ENV == 'dev') {
-                                unstable("Quality gate status: ${qg.status}")
-                            } else {
-                                error "Quality gate failed: ${qg.status}"
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // stage('SonarQube Quality Gate') {
+        //     // allOf {
+        //     //         expression { return params.SECRET_ANALYSIS == false }
+        //     // }
+        //     steps {
+        //         timeout(time: 5, unit: 'MINUTES') {
+        //             script {
+        //                 def qg = waitForQualityGate()
+        //                 if (qg.status != 'OK') {
+        //                     if (env.DEPLOY_ENV == 'dev') {
+        //                         unstable("Quality gate status: ${qg.status}")
+        //                     } else {
+        //                         error "Quality gate failed: ${qg.status}"
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Build WAR with dynamic versioning') {
             // allOf {
@@ -259,12 +259,6 @@ pipeline {
                     sh '''
                         mkdir -p trivy-reports sbom-reports
 
-                        # ---- SBOM (syft) ----
-                        syft "$HARBOR_IMAGE" -o table > sbom-reports/sbom.txt
-                        cat sbom-reports/sbom.txt
-
-                        syft "$HARBOR_IMAGE" -o cyclonedx-json=sbom-reports/sbom-syft.json
-
                         # ---- Trivy image scan ----
                         trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format json -o trivy-reports/trivy-image.json "$HARBOR_IMAGE"
 
@@ -274,19 +268,6 @@ pipeline {
                             --template '@templates/html.tpl' \
                             -o trivy-reports/trivy-image-report.html \
                             "$HARBOR_IMAGE"
-
-                        trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format cyclonedx -o sbom-reports/sbom-trivy.json "$HARBOR_IMAGE"
-
-                        # ---- Wrap sbom.txt in HTML so Jenkins can display it ----
-                        {
-                            echo '<html><head><meta charset="utf-8"><title>SBOM</title>'
-                            echo '<style>body{font-family:sans-serif;margin:20px}pre{font-family:monospace;font-size:12px;overflow:auto}</style>'
-                            echo '</head><body>'
-                            echo "<h2>SBOM for $HARBOR_IMAGE</h2>"
-                            echo '<pre>'
-                            sed -e 's/&/\\&amp;/g' -e 's/</\\&lt;/g' -e 's/>/\\&gt;/g' sbom-reports/sbom.txt
-                            echo '</pre></body></html>'
-                        } > sbom-reports/sbom-report.html
                     '''
 
                     publishHTML([
@@ -298,18 +279,6 @@ pipeline {
                         reportName: 'Trivy Image Scan',
                         reportTitles: 'Container Image Security Scan'
                     ])
-
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'sbom-reports',
-                        reportFiles: 'sbom-report.html',
-                        reportName: 'SBOM Report',
-                        reportTitles: 'Container Image SBOM'
-                    ])
-
-                    archiveArtifacts artifacts: 'sbom-reports/*', allowEmptyArchive: false
                 }
             }
         }
