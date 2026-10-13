@@ -1,0 +1,29 @@
+replicaCount: 1
+
+image:
+  repository: 192.168.56.50/hercey/hercey
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+  nodePort: ""
+
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+probes:
+  liveness:
+    path: /
+    initialDelaySeconds: 45
+    periodSeconds: 10
+  readiness:
+    path: /
+    initialDelaySeconds: 30
+    periodSeconds: 5
