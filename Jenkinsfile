@@ -35,9 +35,6 @@ pipeline {
         VM_IP     = '192.168.56.100'
         VM_USER   = 'root'
         JBOSS_CLI = '/opt/jboss/jboss-eap-8.0/bin/jboss-cli.sh'
-
-        APP_URL = ' http://host.docker.internal:30080/hercey/'
-        APP_HEALTH_URL = ' http://host.docker.internal:30080/hercey/health'
     }
 
     parameters {
@@ -103,9 +100,9 @@ pipeline {
             steps {
                 script {
                     def configs = [
-                        dev    : [harborProject: 'hercey-dev',     harborCreds: 'jenkins-dev-robot',     nexusRepo: 'hercey-dev',      nexusCreds: 'nexus-credentials',     versionSuffix: '-SNAPSHOT', tagPrefix: 'dev-'],
-                        staging: [harborProject: 'hercey-staging', harborCreds: 'jenkins-staging-robot', nexusRepo: 'hercey-staging',  nexusCreds: 'nexus-credentials', versionSuffix: '-rc',       tagPrefix: 'staging-'],
-                        prod   : [harborProject: 'hercey',         harborCreds: 'jenkins-robot',         nexusRepo: 'hercey-releases', nexusCreds: 'nexus-credentials',         versionSuffix: '',          tagPrefix: '']
+                        dev    : [harborProject: 'hercey-dev',     harborCreds: 'jenkins-dev-robot',     nexusRepo: 'hercey-dev',      nexusCreds: 'nexus-credentials',     versionSuffix: '-SNAPSHOT', tagPrefix: 'dev-',     appPort: '30081'],
+                        staging: [harborProject: 'hercey-staging', harborCreds: 'jenkins-staging-robot', nexusRepo: 'hercey-staging',  nexusCreds: 'nexus-credentials', versionSuffix: '-rc',       tagPrefix: 'staging-', appPort: '30082'],
+                        prod   : [harborProject: 'hercey',         harborCreds: 'jenkins-robot',         nexusRepo: 'hercey-releases', nexusCreds: 'nexus-credentials',         versionSuffix: '',          tagPrefix: '',         appPort: '30083']
                     ]
 
                     def name = 'dev'
@@ -124,6 +121,8 @@ pipeline {
                     env.VERSION           = "${env.MAJOR_MINOR}.${env.BUILD_NUMBER}${c.versionSuffix}".toString()
                     env.IMAGE_TAG         = "${c.tagPrefix}${env.MAJOR_MINOR}.${env.BUILD_NUMBER}".toString()
                     env.HARBOR_IMAGE      = "${env.HARBOR_REGISTRY}/${c.harborProject}/${env.APP_NAME}:${env.IMAGE_TAG}".toString()
+                    env.APP_URL           = "http://host.docker.internal:${c.appPort}/${env.APP_NAME}/".toString()
+                    env.APP_HEALTH_URL    = "http://host.docker.internal:${c.appPort}/${env.APP_NAME}/health".toString()
                     env.SONAR_PROJECT_KEY = (name == 'prod') ? 'hercey-app' : "hercey-app-${name}".toString()
 
                     echo "Branch '${env.BRANCH_NAME}' -> environment '${env.DEPLOY_ENV}'"
@@ -389,12 +388,6 @@ pipeline {
                 }
             }
         }
-
-        // ---------------------------------------------------------------------
-        // Deployment + post-deployment checks.
-        // dev only for now: Fleet currently applies overlays/dev, so staging and
-        // prod need their own overlay + Fleet target before these can run there.
-        // ---------------------------------------------------------------------
 
         stage('Update GitOps repository') {
             when { 
