@@ -323,8 +323,6 @@ pipeline {
     steps {
         timeout(time: 5, unit: 'MINUTES') {
             script {
-                // By explicitly casting the input to a String, Jenkins safely converts 
-                // the single password parameter into a standard string automatically.
                 String typedPassword = input(
                     message: 'Verification Required',
                     ok: 'Verify and Continue',
@@ -334,7 +332,6 @@ pipeline {
                 )
 
                 withCredentials([string(credentialsId: 'prod-approval-secret', variable: 'CORRECT_PASS')]) {
-                    // Standard string equality check. No methods like .getPlainText() or map lookups used!
                     if (typedPassword == CORRECT_PASS) {
                         echo "Verification successful. Continuing pipeline..."
                     } else {
