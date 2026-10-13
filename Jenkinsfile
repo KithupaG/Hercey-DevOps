@@ -350,6 +350,7 @@ pipeline {
         stage('Update GitOps repository') {
             when { 
                 anyOf {
+                    branch 'dev'
                     branch 'staging'
                     branch 'main'
                 }    
@@ -386,6 +387,7 @@ pipeline {
         stage('Wait for Fleet rollout') {
             when {
                 anyOf {
+                    branch 'dev'
                     branch 'staging'
                     branch 'main'
                 }   
@@ -395,7 +397,7 @@ pipeline {
                     sh '''
                         CUR=""
                         for i in $(seq 1 60); do
-                            CUR=$(kubectl get deploy jboss-app -n default -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
+                            CUR=$(kubectl get deploy jboss-app -n ${DEPLOY_ENV} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
                             [ "$CUR" = "$HARBOR_IMAGE" ] && break
                             echo "Waiting for Fleet to apply $HARBOR_IMAGE (currently: $CUR)"
                             sleep 10
