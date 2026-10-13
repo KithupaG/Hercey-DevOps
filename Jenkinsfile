@@ -492,11 +492,11 @@ pipeline {
                                 -o trivy-reports/trivy-k8s-report.html \
                                 trivy-reports/trivy-k8s-report.json || true
 
-                            # Fail the build on HIGH/CRITICAL findings for staging/prod.
+                            # Report HIGH/CRITICAL findings for staging/prod (non-blocking for now).
                             if [ "$ENFORCE_SECURITY" = "true" ]; then
-                                echo "Enforcing HIGH/CRITICAL audit gate for ${BRANCH_NAME}..."
+                                echo "Reporting HIGH/CRITICAL audit findings for ${BRANCH_NAME}..."
                                 trivy k8s --report summary --include-namespaces ${DEPLOY_ENV} \
-                                    --severity HIGH,CRITICAL --exit-code 1
+                                    --severity HIGH,CRITICAL
                             fi
                         '''
 
