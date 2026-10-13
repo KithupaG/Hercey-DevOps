@@ -250,38 +250,69 @@ pipeline {
             }
         }
 
-        stage('Image Scan & SBOM') {
-            // allOf {
-            //         expression { return params.TRIVY_IMAGE_SCAN_SBOM == false }
-            // }
-            steps {
-                script {
-                    sh '''
-                        mkdir -p trivy-reports sbom-reports
+        // stage('Image Scan & SBOM') {
+        //     // allOf {
+        //     //         expression { return params.TRIVY_IMAGE_SCAN_SBOM == false }
+        //     // }
+        //     steps {
+        //         script {
+        //             sh '''
+        //                 mkdir -p trivy-reports sbom-reports
 
-                        # ---- Trivy image scan ----
-                        trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format json -o trivy-reports/trivy-image.json "$HARBOR_IMAGE"
+        //                 # ---- SBOM (syft) ----
+        //                 syft "$HARBOR_IMAGE" -o table > sbom-reports/sbom.txt
+        //                 cat sbom-reports/sbom.txt
 
-                        trivy image --cache-dir "$TRIVY_CACHE_DIR" \
-                            --format template \
-                            --timeout 15m \
-                            --template '@templates/html.tpl' \
-                            -o trivy-reports/trivy-image-report.html \
-                            "$HARBOR_IMAGE"
-                    '''
+        //                 syft "$HARBOR_IMAGE" -o cyclonedx-json=sbom-reports/sbom-syft.json
 
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'trivy-reports',
-                        reportFiles: 'trivy-image-report.html',
-                        reportName: 'Trivy Image Scan',
-                        reportTitles: 'Container Image Security Scan'
-                    ])
-                }
-            }
-        }
+        //                 # ---- Trivy image scan ----
+        //                 trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format json -o trivy-reports/trivy-image.json "$HARBOR_IMAGE"
+
+        //                 trivy image --cache-dir "$TRIVY_CACHE_DIR" \
+        //                     --format template \
+        //                     --timeout 15m \
+        //                     --template '@templates/html.tpl' \
+        //                     -o trivy-reports/trivy-image-report.html \
+        //                     "$HARBOR_IMAGE"
+
+        //                 trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format cyclonedx -o sbom-reports/sbom-trivy.json "$HARBOR_IMAGE"
+
+        //                 # ---- Wrap sbom.txt in HTML so Jenkins can display it ----
+        //                 {
+        //                     echo '<html><head><meta charset="utf-8"><title>SBOM</title>'
+        //                     echo '<style>body{font-family:sans-serif;margin:20px}pre{font-family:monospace;font-size:12px;overflow:auto}</style>'
+        //                     echo '</head><body>'
+        //                     echo "<h2>SBOM for $HARBOR_IMAGE</h2>"
+        //                     echo '<pre>'
+        //                     sed -e 's/&/\\&amp;/g' -e 's/</\\&lt;/g' -e 's/>/\\&gt;/g' sbom-reports/sbom.txt
+        //                     echo '</pre></body></html>'
+        //                 } > sbom-reports/sbom-report.html
+        //             '''
+
+        //             publishHTML([
+        //                 allowMissing: false,
+        //                 alwaysLinkToLastBuild: true,
+        //                 keepAll: true,
+        //                 reportDir: 'trivy-reports',
+        //                 reportFiles: 'trivy-image-report.html',
+        //                 reportName: 'Trivy Image Scan',
+        //                 reportTitles: 'Container Image Security Scan'
+        //             ])
+
+        //             publishHTML([
+        //                 allowMissing: false,
+        //                 alwaysLinkToLastBuild: true,
+        //                 keepAll: true,
+        //                 reportDir: 'sbom-reports',
+        //                 reportFiles: 'sbom-report.html',
+        //                 reportName: 'SBOM Report',
+        //                 reportTitles: 'Container Image SBOM'
+        //             ])
+
+        //             archiveArtifacts artifacts: 'sbom-reports/*', allowEmptyArchive: false
+        //         }
+        //     }
+        // }
 
         // Feature branches and PRs stop above: they are built and scanned,
 
@@ -291,10 +322,28 @@ pipeline {
             }
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                    input message: "Release ${env.VERSION} to PRODUCTION?", ok: 'Release'
+                    script {
+                        String typedPassword = input(
+                            message: 'Verification Required',
+                            ok: 'Verify and Continue',
+                            parameters: [
+                                password(name: 'userPassword', description: 'Enter the pipeline password')
+                            ]
+                        )
+
+                        withCredentials([string(credentialsId: 'prod-approval-secret', variable: 'CORRECT_PASS')]) {
+                            if (typedPassword == CORRECT_PASS) {
+                                echo "Verification successful. Continuing pipeline..."
+                            } else {
+                                currentBuild.result = 'ABORTED'
+                                error("Access Denied: Incorrect Password entered")
+                            }
+                        }
+                    }
                 }
             }
         }
+
 
         stage('Publish Artifact to Nexus') {
             when {
