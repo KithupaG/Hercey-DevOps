@@ -322,20 +322,22 @@ pipeline {
             }
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                    def userInput = input(
-                        message: 'Verification Required',
-                        ok: 'Verify and Continue',
-                        parameters: [
-                            password(name: 'userPassword', description: 'Enter the pipeline password')
-                        ]
-                    )
+                    script {
+                        def userInput = input(
+                            message: 'Verification Required',
+                            ok: 'Verify and Continue',
+                            parameters: [
+                                password(name: 'userPassword', description: 'Enter the pipeline password')
+                            ]
+                        )
 
-                    withCredentials([string(credentialsId: 'prod-approval-secret', variable: 'CORRECT_PASS')]) {
-                        if(userInput.getPlainText() == CORRECT_PASS) {
-                            echo "Verification successful. Continuing pipeline..."
-                        }else {
-                            currentBuild.result = 'ABORTED'
-                            error("Access Denied: Incorrect password entered")
+                        withCredentials([string(credentialsId: 'prod-approval-secret', variable: 'CORRECT_PASS')]) {
+                            if(userInput.getPlainText() == CORRECT_PASS) {
+                                echo "Verification successful. Continuing pipeline..."
+                            }else {
+                                currentBuild.result = 'ABORTED'
+                                error("Access Denied: Incorrect password entered")
+                            }
                         }
                     }
                 }
