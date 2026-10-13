@@ -322,10 +322,28 @@ pipeline {
             }
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                    input message: "Release ${env.VERSION} to PRODUCTION?", ok: 'Release'
+                    script {
+                        String typedPassword = input(
+                            message: 'Verification Required',
+                            ok: 'Verify and Continue',
+                            parameters: [
+                                password(name: 'userPassword', description: 'Enter the pipeline password')
+                            ]
+                        )
+
+                        withCredentials([string(credentialsId: 'prod-approval-secret', variable: 'CORRECT_PASS')]) {
+                            if (typedPassword == CORRECT_PASS) {
+                                echo "Verification successful. Continuing pipeline..."
+                            } else {
+                                currentBuild.result = 'ABORTED'
+                                error("Access Denied: Incorrect Password entered")
+                            }
+                        }
+                    }
                 }
             }
         }
+
 
         stage('Publish Artifact to Nexus') {
             when {
@@ -381,6 +399,7 @@ pipeline {
         stage('Update GitOps repository') {
             when { 
                 anyOf {
+                    branch 'dev'
                     branch 'staging'
                     branch 'main'
                 }    
@@ -417,6 +436,7 @@ pipeline {
         stage('Wait for Fleet rollout') {
             when {
                 anyOf {
+                    branch 'dev'
                     branch 'staging'
                     branch 'main'
                 }   
