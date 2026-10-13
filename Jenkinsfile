@@ -496,7 +496,7 @@ pipeline {
         stage('Wait for App Readiness') {
             when {
                 allOf {
-                    expression { return params.HEALTH_TEST == false }
+                    expression { return params.HEALTH_TEST == true }
                 }
                 anyOf {
                     branch 'staging'
@@ -533,7 +533,7 @@ pipeline {
         stage('DAST Security Scan (OWASP ZAP)') {
             when {
                 allOf {
-                    expression { return params.RUN_DAST == false }
+                    expression { return params.RUN_DAST == true }
                 }
                 anyOf {
                     branch 'staging'
