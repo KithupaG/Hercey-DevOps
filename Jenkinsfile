@@ -125,8 +125,6 @@ pipeline {
                     env.APP_HEALTH_URL    = "http://host.docker.internal:${c.appPort}/${env.APP_NAME}/health".toString()
                     env.APP_PORT          = c.appPort
                     env.SONAR_PROJECT_KEY = (name == 'prod') ? 'hercey-app' : "hercey-app-${name}".toString()
-                    // Fails the build on HIGH/CRITICAL vulnerabilities and a failed
-                    // quality gate for staging and prod; dev stays non-blocking.
                     env.ENFORCE_SECURITY  = (name == 'dev') ? 'false' : 'true'
 
                     echo "Branch '${env.BRANCH_NAME}' -> environment '${env.DEPLOY_ENV}'"
@@ -239,7 +237,7 @@ pipeline {
                     if [ "$ENFORCE_SECURITY" = "true" ]; then
                         echo "Enforcing HIGH/CRITICAL vulnerability gate for ${BRANCH_NAME}..."
                         trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
-                                 --format table .
+                                --format table .
                     else
                         echo "Non-blocking scan (branch ${BRANCH_NAME}); reporting only."
                     fi
@@ -481,20 +479,24 @@ pipeline {
                         sh '''
                             mkdir -p trivy-reports
 
+                            # trivy k8s has no template format; scan to JSON, then convert to HTML.
                             trivy k8s \
                                 --report summary \
                                 --include-namespaces ${DEPLOY_ENV} \
+                                --format json \
+                                -o trivy-reports/trivy-k8s-report.json || true
+
+                            trivy convert \
                                 --format template \
                                 --template '@templates/html.tpl' \
                                 -o trivy-reports/trivy-k8s-report.html \
-                                deployment/jboss-app || true
+                                trivy-reports/trivy-k8s-report.json || true
 
                             # Fail the build on HIGH/CRITICAL findings for staging/prod.
                             if [ "$ENFORCE_SECURITY" = "true" ]; then
                                 echo "Enforcing HIGH/CRITICAL audit gate for ${BRANCH_NAME}..."
                                 trivy k8s --report summary --include-namespaces ${DEPLOY_ENV} \
-                                    --severity HIGH,CRITICAL --exit-code 1 \
-                                    deployment/jboss-app
+                                    --severity HIGH,CRITICAL --exit-code 1
                             fi
                         '''
 
