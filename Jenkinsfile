@@ -317,32 +317,32 @@ pipeline {
         // Feature branches and PRs stop above: they are built and scanned,
 
         stage('Approve production release') {
-    when { 
-        branch 'main'
-    }
-    steps {
-        timeout(time: 5, unit: 'MINUTES') {
-            script {
-                String typedPassword = input(
-                    message: 'Verification Required',
-                    ok: 'Verify and Continue',
-                    parameters: [
-                        password(name: 'userPassword', description: 'Enter the pipeline password')
-                    ]
-                )
+            when { 
+                branch 'main'
+            }
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    script {
+                        String typedPassword = input(
+                            message: 'Verification Required',
+                            ok: 'Verify and Continue',
+                            parameters: [
+                                password(name: 'userPassword', description: 'Enter the pipeline password')
+                            ]
+                        )
 
-                withCredentials([string(credentialsId: 'prod-approval-secret', variable: 'CORRECT_PASS')]) {
-                    if (typedPassword == CORRECT_PASS) {
-                        echo "Verification successful. Continuing pipeline..."
-                    } else {
-                        currentBuild.result = 'ABORTED'
-                        error("Access Denied: Incorrect Password entered")
+                        withCredentials([string(credentialsId: 'prod-approval-secret', variable: 'CORRECT_PASS')]) {
+                            if (typedPassword == CORRECT_PASS) {
+                                echo "Verification successful. Continuing pipeline..."
+                            } else {
+                                currentBuild.result = 'ABORTED'
+                                error("Access Denied: Incorrect Password entered")
+                            }
+                        }
                     }
                 }
             }
         }
-    }
-}
 
 
         stage('Publish Artifact to Nexus') {
@@ -399,6 +399,7 @@ pipeline {
         stage('Update GitOps repository') {
             when { 
                 anyOf {
+                    branch 'dev'
                     branch 'staging'
                     branch 'main'
                 }    
@@ -435,6 +436,7 @@ pipeline {
         stage('Wait for Fleet rollout') {
             when {
                 anyOf {
+                    branch 'dev'
                     branch 'staging'
                     branch 'main'
                 }   
