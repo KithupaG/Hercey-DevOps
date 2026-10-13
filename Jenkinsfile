@@ -327,12 +327,12 @@ pipeline {
                             message: 'Verification Required',
                             ok: 'Verify and Continue',
                             parameters: [
-                                password(name: 'userPassword', description: 'Enter the pipeline password')
+                                password(name: 'Pipeline Password', description: 'Enter the pipeline password')
                             ]
                         )
 
                         withCredentials([string(credentialsId: 'prod-approval-secret', variable: 'CORRECT_PASS')]) {
-                            if(userInput.getPlainText() == CORRECT_PASS) {
+                            if(userInput.equals(CORRECT_PASS)) {
                                 echo "Verification successful. Continuing pipeline..."
                             }else {
                                 currentBuild.result = 'ABORTED'
