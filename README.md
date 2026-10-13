@@ -1,15 +1,30 @@
-# Kubernetes Fleet GitOps Deployment Repository
+# Hercey Application - CI/CD Pipeline
 
-This repository implements a GitOps-based deployment pipeline for the **JBoss Application (`jboss-app`)** using **Rancher Fleet**, **Kustomize**, and **K3s**. It manages multi-environment deployments (`staging` and `prod`) from a single centralized repository.
+Jenkins CI/CD for the **Hercey JBoss/WildFly application**. Every build produces a versioned
+WAR, packages it into a container image **and** a Helm chart, pushes both to **Harbor**, and
+deploys to Kubernetes with Helm. Harbor (OCI) is the **single source of truth** for both the
+image and the chart.
 
 ---
 
 ## Architecture & Tech Stack
 
-* **Orchestration / GitOps:** Rancher Fleet (`fleet.yaml`)
-* **Configuration Management:** Kustomize (Base and Environment Overlays)
-* **Kubernetes Platform:** K3s Single-Node Cluster
-* **Application:** JBoss Enterprise / WildFly Container (`jboss-app`)
+* **CI/CD:** Jenkins (Multibranch Pipeline)
+* **Artifact registry / source of truth:** Harbor (OCI) - container images + Helm charts
+* **Packaging / deployment:** Helm (`helm/hercey`)
+* **Kubernetes platform:** K3s single-node cluster
+* **Application:** JBoss Enterprise / WildFly container (`jboss-app`)
+
+---
+
+## Delivery Flow
+
+1. Build the versioned WAR with Maven.
+2. Build the WildFly container image.
+3. Push the image to Harbor: `192.168.56.50/<project>/hercey:<image-tag>`.
+4. Package the Helm chart and push it to Harbor OCI: `oci://192.168.56.50/<project>/hercey:<version>`.
+5. Deploy from Harbor with `helm upgrade --install` into the environment namespace.
+6. Post-deploy security/health checks (Trivy audit, health test, OWASP ZAP DAST).
 
 ---
 
@@ -17,74 +32,60 @@ This repository implements a GitOps-based deployment pipeline for the **JBoss Ap
 
 ```text
 .
-├── apps/
-│   └── jboss-app/
-│       ├── fleet.yaml               # Fleet multi-target configuration
-│       ├── base/                    # Shared Kubernetes manifests
-│       │   ├── deployment.yaml
-│       │   ├── service.yaml
-│       │   └── kustomization.yaml
-│       └── overlays/                # Environment-specific configurations
-│           ├── staging/
-│           │   └── kustomization.yaml
-│           └── prod/
-│               └── kustomization.yaml
+├── Jenkinsfile                 # Multibranch pipeline definition
+├── Dockerfile                  # WildFly image build
+├── pom.xml                     # Maven WAR build
+├── helm/
+│   └── hercey/                 # Helm chart (single source of truth in Harbor)
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       └── templates/
+│           ├── deployment.yaml
+│           └── service.yaml
+└── src/                        # Application source
 ```
 
 ---
 
-## Fleet Target Configuration (`fleet.yaml`)
+## Environments
 
-Fleet uses `targetCustomizationMode: AllMatches` to evaluate both staging and production targets concurrently against the cluster labels:
+The branch selects the environment automatically (see the `Load environment config` stage):
 
-```yaml
-targetCustomizationMode: AllMatches
-targetCustomizations:
-  - name: staging
-    clusterSelector:
-      matchLabels:
-        staging-env: "true"
-    kustomize:
-      dir: overlays/staging
-    namespace: staging
+| Branch    | Namespace | Harbor project  | Image tag          | NodePort |
+|-----------|-----------|-----------------|--------------------|----------|
+| `dev`     | `dev`     | `hercey-dev`    | `dev-1.0.<build>`  | 30081    |
+| `staging` | `staging` | `hercey-staging`| `staging-1.0.<build>` | 30082 |
+| `main`    | `prod`    | `hercey`        | `1.0.<build>`      | 30083    |
 
-  - name: prod
-    clusterSelector:
-      matchLabels:
-        prod-env: "true"
-    kustomize:
-      dir: overlays/prod
-    namespace: prod
+`staging` and `main` deploy automatically; `dev` builds and pushes artifacts only.
+
+---
+
+## Deploy & Rollback
+
+Jenkins performs the deploy from Harbor, for example:
+
+```bash
+helm upgrade --install jboss-app \
+  oci://192.168.56.50/<project>/hercey \
+  --version <version> \
+  --namespace <env> --create-namespace \
+  --set image.repository=192.168.56.50/<project>/hercey \
+  --set image.tag=<image-tag> \
+  --set service.type=NodePort --set service.nodePort=<nodePort> \
+  --plain-http --wait --rollback-on-failure
+```
+
+Roll back a release:
+
+```bash
+helm rollback jboss-app -n <env>
+helm history jboss-app -n <env>
 ```
 
 ---
 
-## Cluster Prerequisites & Labeling
+## Retired
 
-For Fleet to successfully target and deploy resources to your K3s cluster, ensure the cluster object in the `fleet-local` namespace is properly labeled with both environment flags:
-
-```bash
-kubectl label clusters.fleet.cattle.io local staging-env=true prod-env=true -n fleet-local --overwrite
-```
-
-Verify the labels have been successfully applied:
-```bash
-kubectl get clusters.fleet.cattle.io local -n fleet-local -o jsonpath='{.metadata.labels}'
-```
-
----
-
-## Verifying Deployments
-
-Once Fleet syncs the repository, you can verify the status of the bundle deployments across your cluster:
-
-```bash
-kubectl get bundledeployments -A | grep hercey-k8s-deployment
-```
-
-Check that the pods and deployments are running successfully in both namespaces:
-
-```bash
-kubectl get deploy,pods -n staging
-kubectl get deploy,pods -n prod
-```
+Rancher Fleet and the `K8S-Fleet-Deployment-Repo` GitOps repository are retired. Deployment is
+now driven directly by Jenkins using Helm, pulling both the image and the chart from Harbor.

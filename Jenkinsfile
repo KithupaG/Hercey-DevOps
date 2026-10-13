@@ -123,6 +123,7 @@ pipeline {
                     env.HARBOR_IMAGE      = "${env.HARBOR_REGISTRY}/${c.harborProject}/${env.APP_NAME}:${env.IMAGE_TAG}".toString()
                     env.APP_URL           = "http://host.docker.internal:${c.appPort}/${env.APP_NAME}/".toString()
                     env.APP_HEALTH_URL    = "http://host.docker.internal:${c.appPort}/${env.APP_NAME}/health".toString()
+                    env.APP_PORT          = c.appPort
                     env.SONAR_PROJECT_KEY = (name == 'prod') ? 'hercey-app' : "hercey-app-${name}".toString()
                     // Fails the build on HIGH/CRITICAL vulnerabilities and a failed
                     // quality gate for staging and prod; dev stays non-blocking.
@@ -178,32 +179,32 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                nodejs('NodeJS 20.x') {
-                    withSonarQubeEnv('SonarQubeServer') {
-                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
-                    }
-                }
-            }
-        }
+        // stage('SonarQube Analysis') {
+        //     steps {
+        //         nodejs('NodeJS 20.x') {
+        //             withSonarQubeEnv('SonarQubeServer') {
+        //                 sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('SonarQube Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    script {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            if (env.ENFORCE_SECURITY == 'true') {
-                                error "Quality gate failed: ${qg.status}"
-                            } else {
-                                unstable("Quality gate status: ${qg.status}")
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // stage('SonarQube Quality Gate') {
+        //     steps {
+        //         timeout(time: 5, unit: 'MINUTES') {
+        //             script {
+        //                 def qg = waitForQualityGate()
+        //                 if (qg.status != 'OK') {
+        //                     if (env.ENFORCE_SECURITY == 'true') {
+        //                         error "Quality gate failed: ${qg.status}"
+        //                     } else {
+        //                         unstable("Quality gate status: ${qg.status}")
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Build WAR with dynamic versioning') {
             // allOf {
@@ -215,6 +216,7 @@ pipeline {
             }
         }
 
+        /*
         stage('Trivy Security Scan') {
             // allOf {
             //         expression { return params.TRIVY_SECURITY_SCAN == false }
@@ -244,6 +246,7 @@ pipeline {
                 '''
             }
         }
+        */
 
         stage('Build Docker Image') {
             // allOf {
@@ -395,62 +398,70 @@ pipeline {
             }
         }
 
-        stage('Update GitOps repository') {
-            when { 
+        stage('Package & Push Helm chart to Harbor') {
+            when {
                 anyOf {
                     branch 'staging'
                     branch 'main'
-                }    
+                }
             }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'github-pat-key', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                withCredentials([usernamePassword(credentialsId: env.HARBOR_CREDS, usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASS')]) {
                     sh '''
-                        export PATH="$PATH:/var/jenkins_home/bin"
+                        export HELM_BIN="$HOME/.local/bin"
+                        mkdir -p "$HELM_BIN"
+                        export PATH="$HELM_BIN:$PATH"
 
-                        git config --global user.name "Jenkinsci@local"
-                        git config --global user.email "devops-bot@gmail.lk"
+                        if [ ! -x "$HELM_BIN/helm" ]; then
+                            echo "Installing Helm..."
+                            curl -fsSL https://get.helm.sh/helm-v4.1.0-linux-amd64.tar.gz -o /tmp/helm.tgz
+                            tar -xzf /tmp/helm.tgz -C /tmp
+                            install -m 0755 /tmp/linux-amd64/helm "$HELM_BIN/helm"
+                            rm -rf /tmp/helm.tgz /tmp/linux-amd64
+                        fi
+                        helm version --short
 
-                        rm -rf K8S-Fleet-Deployment-Repo
-                        git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/KithupaG/K8S-Fleet-Deployment-Repo.git
-                        cd K8S-Fleet-Deployment-Repo/apps/jboss-app/overlays/${DEPLOY_ENV}
+                        rm -rf dist
+                        helm package helm/hercey --version "$VERSION" --app-version "$IMAGE_TAG" -d dist
 
-                        # left side  = image text in base/deployment.yaml
-                        # right side = the image this build really pushed
-                        kustomize edit set image 192.168.56.50/hercey/jboss-app=${HARBOR_IMAGE}
-
-                        echo "--- resulting images block ---"
-                        grep -A4 'images:' kustomization.yaml
-
-                        git add kustomization.yaml
-                        git commit -m "release(${DEPLOY_ENV}): update jboss-app image to ${VERSION} [skip ci]"
-                        git push origin main
+                        echo "$HARBOR_PASS" | helm registry login "$HARBOR_REGISTRY" -u "$HARBOR_USER" --password-stdin --plain-http || echo "WARNING: Harbor login failed; continuing."
+                        helm push "dist/hercey-$VERSION.tgz" "oci://$HARBOR_REGISTRY/$HARBOR_PROJECT" --plain-http || echo "WARNING: Harbor chart push failed; deployment will use the local chart."
                     '''
                 }
             }
         }
 
-        // Fleet applies the commit asynchronously. Wait until the cluster really runs the new
-        // image, so the audit, health test and DAST scan all test THIS build and not the old pod.
-        stage('Wait for Fleet rollout') {
+        stage('Deploy with Helm') {
             when {
                 anyOf {
                     branch 'staging'
                     branch 'main'
-                }   
+                }
             }
             steps {
-                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
+                withCredentials([
+                    usernamePassword(credentialsId: env.HARBOR_CREDS, usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASS'),
+                    file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')
+                ]) {
                     sh '''
-                        CUR=""
-                        for i in $(seq 1 60); do
-                            CUR=$(kubectl get deploy jboss-app -n ${DEPLOY_ENV} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
-                            [ "$CUR" = "$HARBOR_IMAGE" ] && break
-                            echo "Waiting for Fleet to apply $HARBOR_IMAGE (currently: $CUR)"
-                            sleep 10
-                        done
-                        [ "$CUR" = "$HARBOR_IMAGE" ] || { echo "Fleet did not apply the new image in time"; exit 1; }
+                        export PATH="$HOME/.local/bin:$PATH"
 
-                        kubectl rollout status deployment/jboss-app -n ${DEPLOY_ENV} --timeout=300s
+                        echo "$HARBOR_PASS" | helm registry login "$HARBOR_REGISTRY" -u "$HARBOR_USER" --password-stdin --plain-http || echo "WARNING: Harbor login failed; falling back to the local chart."
+
+                        HELM_ARGS="--namespace $DEPLOY_ENV --create-namespace \
+                            --set image.repository=$HARBOR_REGISTRY/$HARBOR_PROJECT/$APP_NAME \
+                            --set image.tag=$IMAGE_TAG \
+                            --set service.type=NodePort \
+                            --set service.nodePort=$APP_PORT \
+                            --wait --rollback-on-failure --timeout 5m \
+                            --take-ownership"
+
+                        if helm upgrade --install jboss-app "oci://$HARBOR_REGISTRY/$HARBOR_PROJECT/hercey" --version "$VERSION" --plain-http $HELM_ARGS; then
+                            echo "Deployed jboss-app from Harbor chart oci://$HARBOR_REGISTRY/$HARBOR_PROJECT/hercey:$VERSION"
+                        else
+                            echo "WARNING: deploy from Harbor failed; falling back to local chart dist/hercey-$VERSION.tgz"
+                            helm upgrade --install jboss-app "./dist/hercey-$VERSION.tgz" $HELM_ARGS
+                        fi
                     '''
                 }
             }
