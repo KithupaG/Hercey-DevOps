@@ -332,7 +332,9 @@ pipeline {
                         )
 
                         withCredentials([string(credentialsId: 'prod-approval-secret', variable: 'CORRECT_PASS')]) {
-                            if(userInput.equals(CORRECT_PASS)) {
+                            def typedPassword = "${userInput['userPassword']}"
+
+                            if(typedPassword == CORRECT_PASS) {
                                 echo "Verification successful. Continuing pipeline..."
                             }else {
                                 currentBuild.result = 'ABORTED'
