@@ -124,6 +124,9 @@ pipeline {
                     env.APP_URL           = "http://host.docker.internal:${c.appPort}/${env.APP_NAME}/".toString()
                     env.APP_HEALTH_URL    = "http://host.docker.internal:${c.appPort}/${env.APP_NAME}/health".toString()
                     env.SONAR_PROJECT_KEY = (name == 'prod') ? 'hercey-app' : "hercey-app-${name}".toString()
+                    // Fails the build on HIGH/CRITICAL vulnerabilities and a failed
+                    // quality gate for staging and prod; dev stays non-blocking.
+                    env.ENFORCE_SECURITY  = (name == 'dev') ? 'false' : 'true'
 
                     echo "Branch '${env.BRANCH_NAME}' -> environment '${env.DEPLOY_ENV}'"
                     echo "Version: ${env.VERSION} | Image: ${env.HARBOR_IMAGE} | Nexus repo: ${env.NEXUS_REPO}"
@@ -175,38 +178,32 @@ pipeline {
             }
         }
 
-        // stage('SonarQube Analysis') {
-        //     // allOf {
-        //     //         expression { return params.SECRET_SCANNING == false }
-        //     // }
-        //     steps {
-        //         nodejs('NodeJS 20.x') {
-        //             withSonarQubeEnv('SonarQubeServer') {
-        //                 sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
-        //             }
-        //         }
-        //     }
-        // }
+        stage('SonarQube Analysis') {
+            steps {
+                nodejs('NodeJS 20.x') {
+                    withSonarQubeEnv('SonarQubeServer') {
+                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
+                    }
+                }
+            }
+        }
 
-        // stage('SonarQube Quality Gate') {
-        //     // allOf {
-        //     //         expression { return params.SECRET_ANALYSIS == false }
-        //     // }
-        //     steps {
-        //         timeout(time: 5, unit: 'MINUTES') {
-        //             script {
-        //                 def qg = waitForQualityGate()
-        //                 if (qg.status != 'OK') {
-        //                     if (env.DEPLOY_ENV == 'dev') {
-        //                         unstable("Quality gate status: ${qg.status}")
-        //                     } else {
-        //                         error "Quality gate failed: ${qg.status}"
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+        stage('SonarQube Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    script {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            if (env.ENFORCE_SECURITY == 'true') {
+                                error "Quality gate failed: ${qg.status}"
+                            } else {
+                                unstable("Quality gate status: ${qg.status}")
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         stage('Build WAR with dynamic versioning') {
             // allOf {
@@ -235,6 +232,15 @@ pipeline {
                             -o trivy-reports/trivy-fs-report.html .
 
                     trivy fs --format cyclonedx -o trivy-reports/sbom-source.json .
+
+                    # Fail the build on HIGH/CRITICAL vulnerabilities for staging/prod.
+                    if [ "$ENFORCE_SECURITY" = "true" ]; then
+                        echo "Enforcing HIGH/CRITICAL vulnerability gate for ${BRANCH_NAME}..."
+                        trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
+                                 --format table .
+                    else
+                        echo "Non-blocking scan (branch ${BRANCH_NAME}); reporting only."
+                    fi
                 '''
             }
         }
@@ -466,10 +472,19 @@ pipeline {
 
                             trivy k8s \
                                 --report summary \
+                                --include-namespaces ${DEPLOY_ENV} \
                                 --format template \
                                 --template '@templates/html.tpl' \
                                 -o trivy-reports/trivy-k8s-report.html \
                                 deployment/jboss-app || true
+
+                            # Fail the build on HIGH/CRITICAL findings for staging/prod.
+                            if [ "$ENFORCE_SECURITY" = "true" ]; then
+                                echo "Enforcing HIGH/CRITICAL audit gate for ${BRANCH_NAME}..."
+                                trivy k8s --report summary --include-namespaces ${DEPLOY_ENV} \
+                                    --severity HIGH,CRITICAL --exit-code 1 \
+                                    deployment/jboss-app
+                            fi
                         '''
 
                         publishHTML([
