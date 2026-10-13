@@ -399,7 +399,6 @@ pipeline {
         stage('Update GitOps repository') {
             when { 
                 anyOf {
-                    branch 'dev'
                     branch 'staging'
                     branch 'main'
                 }    
@@ -436,7 +435,6 @@ pipeline {
         stage('Wait for Fleet rollout') {
             when {
                 anyOf {
-                    branch 'dev'
                     branch 'staging'
                     branch 'main'
                 }   
