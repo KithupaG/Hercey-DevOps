@@ -425,7 +425,7 @@ pipeline {
                         helm package helm/hercey --version "$VERSION" --app-version "$IMAGE_TAG" -d dist
 
                         echo "$HARBOR_PASS" | helm registry login "$HARBOR_REGISTRY" -u "$HARBOR_USER" --password-stdin --plain-http || echo "WARNING: Harbor login failed; continuing."
-                        helm push "dist/hercey-$VERSION.tgz" "oci://$HARBOR_REGISTRY/$HARBOR_PROJECT" --plain-http || echo "WARNING: Harbor chart push failed; deployment will use the local chart."
+                        helm push "dist/hercey-$VERSION.tgz" "oci://$HARBOR_REGISTRY/$HARBOR_PROJECT/charts" --plain-http || echo "WARNING: Harbor chart push failed; deployment will use the local chart."
                     '''
                 }
             }
@@ -454,10 +454,10 @@ pipeline {
                             --set service.type=NodePort \
                             --set service.nodePort=$APP_PORT \
                             --wait --rollback-on-failure --timeout 5m \
-                            --take-ownership"
+                            --take-ownership --force-conflicts"
 
-                        if helm upgrade --install jboss-app "oci://$HARBOR_REGISTRY/$HARBOR_PROJECT/hercey" --version "$VERSION" --plain-http $HELM_ARGS; then
-                            echo "Deployed jboss-app from Harbor chart oci://$HARBOR_REGISTRY/$HARBOR_PROJECT/hercey:$VERSION"
+                        if helm upgrade --install jboss-app "oci://$HARBOR_REGISTRY/$HARBOR_PROJECT/charts/hercey" --version "$VERSION" --plain-http $HELM_ARGS; then
+                            echo "Deployed jboss-app from Harbor chart oci://$HARBOR_REGISTRY/$HARBOR_PROJECT/charts/hercey:$VERSION"
                         else
                             echo "WARNING: deploy from Harbor failed; falling back to local chart dist/hercey-$VERSION.tgz"
                             helm upgrade --install jboss-app "./dist/hercey-$VERSION.tgz" $HELM_ARGS

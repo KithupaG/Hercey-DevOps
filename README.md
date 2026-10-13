@@ -22,7 +22,7 @@ image and the chart.
 1. Build the versioned WAR with Maven.
 2. Build the WildFly container image.
 3. Push the image to Harbor: `192.168.56.50/<project>/hercey:<image-tag>`.
-4. Package the Helm chart and push it to Harbor OCI: `oci://192.168.56.50/<project>/hercey:<version>`.
+4. Package the Helm chart and push it to Harbor OCI: `oci://192.168.56.50/<project>/charts/hercey:<version>` (a `charts` subpath keeps chart tags separate from image tags).
 5. Deploy from Harbor with `helm upgrade --install` into the environment namespace.
 6. Post-deploy security/health checks (Trivy audit, health test, OWASP ZAP DAST).
 
@@ -67,13 +67,13 @@ Jenkins performs the deploy from Harbor, for example:
 
 ```bash
 helm upgrade --install jboss-app \
-  oci://192.168.56.50/<project>/hercey \
+  oci://192.168.56.50/<project>/charts/hercey \
   --version <version> \
   --namespace <env> --create-namespace \
   --set image.repository=192.168.56.50/<project>/hercey \
   --set image.tag=<image-tag> \
   --set service.type=NodePort --set service.nodePort=<nodePort> \
-  --plain-http --wait --rollback-on-failure
+  --plain-http --wait --rollback-on-failure --take-ownership --force-conflicts
 ```
 
 Roll back a release:
