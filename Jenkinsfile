@@ -486,6 +486,41 @@ pipeline {
             }
         }
 
+        stage('Deploy WAR file to JBoss EAP VM (With Rollback & Backup)') {
+            when {
+                anyOf {
+                    branch 'staging'
+                    branch 'main'
+                }
+            }
+            steps {
+                sshagent(credentials: ['jboss-vm-ssh-key']) {
+                    script {
+                        try {
+                            echo "Creating backup of current deployment on VM..."
+                            sh "ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} 'cp /tmp/hercey.war /tmp/hercey.war.bak 2>/dev/null || true'"
+
+                            echo "Transferring artifact directly into the VM..."
+                            sh "scp -o StrictHostKeyChecking=no ${WAR_PATH} ${VM_USER}@${VM_IP}:/tmp/hercey.war"
+
+                            echo "Executing deployment using JBoss CLI..."
+                            sh """
+                                ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
+                                "${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war'"
+                            """
+                        } catch (Exception e) {
+                            echo "WARNING: JBoss VM deployment failed! Restoring backup WAR file..."
+                            sh """
+                                ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
+                                "if [ -f /tmp/hercey.war.bak ]; then ${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war.bak'; fi"
+                            """
+                            error "JBoss VM Deployment failed and was rolled back to previous backup: ${e.message}"
+                        }
+                    }
+                }
+            }
+        }
+
         stage('DAST Security Scan (OWASP ZAP)') {
             when {
                 allOf {
@@ -521,35 +556,6 @@ pipeline {
                         reportName: 'OWASP ZAP DAST Reports',
                         reportTitles: 'Kubernetes Scan'
                     ])
-                }
-            }
-        }
-
-        stage('Deploy WAR file to JBoss EAP VM (With Rollback & Backup)') {
-            steps {
-                sshagent(credentials: ['jboss-vm-ssh-key']) {
-                    script {
-                        try {
-                            echo "Creating backup of current deployment on VM..."
-                            sh "ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} 'cp /tmp/hercey.war /tmp/hercey.war.bak 2>/dev/null || true'"
-
-                            echo "Transferring artifact directly into the VM..."
-                            sh "scp -o StrictHostKeyChecking=no ${WAR_PATH} ${VM_USER}@${VM_IP}:/tmp/hercey.war"
-
-                            echo "Executing deployment using JBoss CLI..."
-                            sh """
-                                ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
-                                "${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war'"
-                            """
-                        } catch (Exception e) {
-                            echo "WARNING: JBoss VM deployment failed! Restoring backup WAR file..."
-                            sh """
-                                ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
-                                "if [ -f /tmp/hercey.war.bak ]; then ${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war.bak'; fi"
-                            """
-                            error "JBoss VM Deployment failed and was rolled back to previous backup: ${e.message}"
-                        }
-                    }
                 }
             }
         }
