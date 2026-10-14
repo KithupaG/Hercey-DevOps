@@ -38,51 +38,6 @@ pipeline {
     }
 
     parameters {
-        // booleanParam(
-        //     name: 'SOURCE_CODE_SCANNING',
-        //     defaultValue: true,
-        //     description: 'Disable to stop SCM scan'
-        // )
-        // booleanParam(
-        //     name: 'SECRET_SCANNING',
-        //     defaultValue: true,
-        //     description: 'Disable to stop trufflehog secret scan'
-        // )
-        // booleanParam(
-        //     name: 'SONARQUBE_ANALYSIS',
-        //     defaultValue: true,
-        //     description: 'Disable to stop sonarqube scan'
-        // )
-        // booleanParam(
-        //     name: 'SONARQUBE_QUALITY_GATE',
-        //     defaultValue: true,
-        //     description: 'Disable to stop sonarqube quality gate'
-        // )
-        // booleanParam(
-        //     name: 'BUILD_WAR',
-        //     defaultValue: true,
-        //     description: 'Disable to stop building of the war file'
-        // )
-        // booleanParam(
-        //     name: 'TRIVY_SECURITY_SCAN',
-        //     defaultValue: true,
-        //     description: 'Disable to stop trivy SCA scan'
-        // )
-        // booleanParam(
-        //     name: 'BUILD_DOCKER_IMAGE',
-        //     defaultValue: true,
-        //     description: 'Disable to stop docker image being built'
-        // )
-        // booleanParam(
-        //     name: 'TRIVY_IMAGE_SCAN_SBOM',
-        //     defaultValue: true,
-        //     description: 'Disable to stop trivy from scanning your image and generating an SBOM'
-        // )
-        // booleanParam(
-        //     name: 'TRIVY_KUBERNETES_SCAN',
-        //     defaultValue: true,
-        //     description: 'Disable to stop trivy from scanning kubernetes manifest files'
-        // )
         booleanParam(
             name: 'RUN_DAST',
             defaultValue: true,
@@ -134,18 +89,12 @@ pipeline {
         }
 
         stage('Checkout Source Code') {
-            // allOf {
-            //         expression { return params.SOURCE_CODE_SCANNING == false }
-            // }
             steps {
                 checkout scm
             }
         }
 
         stage('Secret Scanning (TruffleHog)') {
-            // allOf {
-            //         expression { return params.SECRET_SCANNING == false }
-            // }
             steps {
                 script {
                     echo "Scanning repository for leaked credentials with TruffleHog..."
@@ -177,48 +126,41 @@ pipeline {
             }
         }
 
-        // stage('SonarQube Analysis') {
-        //     steps {
-        //         nodejs('NodeJS 20.x') {
-        //             withSonarQubeEnv('SonarQubeServer') {
-        //                 sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
-        //             }
-        //         }
-        //     }
-        // }
+        stage('SonarQube Analysis') {
+            steps {
+                nodejs('NodeJS 20.x') {
+                    withSonarQubeEnv('SonarQubeServer') {
+                        sh 'mvn clean compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.sources=src/main -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="hercey ($DEPLOY_ENV)"'
+                    }
+                }
+            }
+        }
 
-        // stage('SonarQube Quality Gate') {
-        //     steps {
-        //         timeout(time: 5, unit: 'MINUTES') {
-        //             script {
-        //                 def qg = waitForQualityGate()
-        //                 if (qg.status != 'OK') {
-        //                     if (env.ENFORCE_SECURITY == 'true') {
-        //                         error "Quality gate failed: ${qg.status}"
-        //                     } else {
-        //                         unstable("Quality gate status: ${qg.status}")
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+        stage('SonarQube Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    script {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            if (env.ENFORCE_SECURITY == 'true') {
+                                error "Quality gate failed: ${qg.status}"
+                            } else {
+                                unstable("Quality gate status: ${qg.status}")
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         stage('Build WAR with dynamic versioning') {
-            // allOf {
-            //         expression { return params.BUILD_WAR == false }
-            // }
             steps {
                 echo "Building artifact version: ${env.VERSION}"
                 sh 'mvn clean package -DskipTests -Drevision=$VERSION'
             }
         }
 
-        /*
         stage('Trivy Security Scan') {
-            // allOf {
-            //         expression { return params.TRIVY_SECURITY_SCAN == false }
-            // }
             steps {
                 sh '''
                     mkdir -p trivy-reports
@@ -244,81 +186,74 @@ pipeline {
                 '''
             }
         }
-        */
 
         stage('Build Docker Image') {
-            // allOf {
-            //         expression { return params.BUILD_DOCKER_IMAGE == false }
-            // }
             steps {
                 echo "Building custom WildFly Docker image: ${env.HARBOR_IMAGE}"
                 sh 'docker build -t "$HARBOR_IMAGE" .'
             }
         }
 
-        // stage('Image Scan & SBOM') {
-        //     // allOf {
-        //     //         expression { return params.TRIVY_IMAGE_SCAN_SBOM == false }
-        //     // }
-        //     steps {
-        //         script {
-        //             sh '''
-        //                 mkdir -p trivy-reports sbom-reports
+        stage('Image Scan & SBOM') {
+            steps {
+                script {
+                    sh '''
+                        mkdir -p trivy-reports sbom-reports
 
-        //                 # ---- SBOM (syft) ----
-        //                 syft "$HARBOR_IMAGE" -o table > sbom-reports/sbom.txt
-        //                 cat sbom-reports/sbom.txt
+                        # ---- SBOM (syft) ----
+                        syft "$HARBOR_IMAGE" -o table > sbom-reports/sbom.txt
+                        cat sbom-reports/sbom.txt
 
-        //                 syft "$HARBOR_IMAGE" -o cyclonedx-json=sbom-reports/sbom-syft.json
+                        syft "$HARBOR_IMAGE" -o cyclonedx-json=sbom-reports/sbom-syft.json
 
-        //                 # ---- Trivy image scan ----
-        //                 trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format json -o trivy-reports/trivy-image.json "$HARBOR_IMAGE"
+                        # ---- Trivy image scan ----
+                        trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format json -o trivy-reports/trivy-image.json "$HARBOR_IMAGE"
 
-        //                 trivy image --cache-dir "$TRIVY_CACHE_DIR" \
-        //                     --format template \
-        //                     --timeout 15m \
-        //                     --template '@templates/html.tpl' \
-        //                     -o trivy-reports/trivy-image-report.html \
-        //                     "$HARBOR_IMAGE"
+                        trivy image --cache-dir "$TRIVY_CACHE_DIR" \
+                            --format template \
+                            --timeout 15m \
+                            --template '@templates/html.tpl' \
+                            -o trivy-reports/trivy-image-report.html \
+                            "$HARBOR_IMAGE"
 
-        //                 trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format cyclonedx -o sbom-reports/sbom-trivy.json "$HARBOR_IMAGE"
+                        trivy image --cache-dir "$TRIVY_CACHE_DIR" --timeout 15m --format cyclonedx -o sbom-reports/sbom-trivy.json "$HARBOR_IMAGE"
 
-        //                 # ---- Wrap sbom.txt in HTML so Jenkins can display it ----
-        //                 {
-        //                     echo '<html><head><meta charset="utf-8"><title>SBOM</title>'
-        //                     echo '<style>body{font-family:sans-serif;margin:20px}pre{font-family:monospace;font-size:12px;overflow:auto}</style>'
-        //                     echo '</head><body>'
-        //                     echo "<h2>SBOM for $HARBOR_IMAGE</h2>"
-        //                     echo '<pre>'
-        //                     sed -e 's/&/\\&amp;/g' -e 's/</\\&lt;/g' -e 's/>/\\&gt;/g' sbom-reports/sbom.txt
-        //                     echo '</pre></body></html>'
-        //                 } > sbom-reports/sbom-report.html
-        //             '''
+                        # ---- Wrap sbom.txt in HTML so Jenkins can display it ----
+                        {
+                            echo '<html><head><meta charset="utf-8"><title>SBOM</title>'
+                            echo '<style>body{font-family:sans-serif;margin:20px}pre{font-family:monospace;font-size:12px;overflow:auto}</style>'
+                            echo '</head><body>'
+                            echo "<h2>SBOM for $HARBOR_IMAGE</h2>"
+                            echo '<pre>'
+                            sed -e 's/&/\\&amp;/g' -e 's/</\\&lt;/g' -e 's/>/\\&gt;/g' sbom-reports/sbom.txt
+                            echo '</pre></body></html>'
+                        } > sbom-reports/sbom-report.html
+                    '''
 
-        //             publishHTML([
-        //                 allowMissing: false,
-        //                 alwaysLinkToLastBuild: true,
-        //                 keepAll: true,
-        //                 reportDir: 'trivy-reports',
-        //                 reportFiles: 'trivy-image-report.html',
-        //                 reportName: 'Trivy Image Scan',
-        //                 reportTitles: 'Container Image Security Scan'
-        //             ])
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'trivy-reports',
+                        reportFiles: 'trivy-image-report.html',
+                        reportName: 'Trivy Image Scan',
+                        reportTitles: 'Container Image Security Scan'
+                    ])
 
-        //             publishHTML([
-        //                 allowMissing: false,
-        //                 alwaysLinkToLastBuild: true,
-        //                 keepAll: true,
-        //                 reportDir: 'sbom-reports',
-        //                 reportFiles: 'sbom-report.html',
-        //                 reportName: 'SBOM Report',
-        //                 reportTitles: 'Container Image SBOM'
-        //             ])
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'sbom-reports',
+                        reportFiles: 'sbom-report.html',
+                        reportName: 'SBOM Report',
+                        reportTitles: 'Container Image SBOM'
+                    ])
 
-        //             archiveArtifacts artifacts: 'sbom-reports/*', allowEmptyArchive: false
-        //         }
-        //     }
-        // }
+                    archiveArtifacts artifacts: 'sbom-reports/*', allowEmptyArchive: false
+                }
+            }
+        }
 
         // Feature branches and PRs stop above: they are built and scanned,
 
@@ -551,6 +486,41 @@ pipeline {
             }
         }
 
+        stage('Deploy WAR file to JBoss EAP VM (With Rollback & Backup)') {
+            when {
+                anyOf {
+                    branch 'staging'
+                    branch 'main'
+                }
+            }
+            steps {
+                sshagent(credentials: ['jboss-vm-ssh-key']) {
+                    script {
+                        try {
+                            echo "Creating backup of current deployment on VM..."
+                            sh "ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} 'cp /tmp/hercey.war /tmp/hercey.war.bak 2>/dev/null || true'"
+
+                            echo "Transferring artifact directly into the VM..."
+                            sh "scp -o StrictHostKeyChecking=no ${WAR_PATH} ${VM_USER}@${VM_IP}:/tmp/hercey.war"
+
+                            echo "Executing deployment using JBoss CLI..."
+                            sh """
+                                ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
+                                "${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war'"
+                            """
+                        } catch (Exception e) {
+                            echo "WARNING: JBoss VM deployment failed! Restoring backup WAR file..."
+                            sh """
+                                ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
+                                "if [ -f /tmp/hercey.war.bak ]; then ${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war.bak'; fi"
+                            """
+                            error "JBoss VM Deployment failed and was rolled back to previous backup: ${e.message}"
+                        }
+                    }
+                }
+            }
+        }
+
         stage('DAST Security Scan (OWASP ZAP)') {
             when {
                 allOf {
@@ -589,35 +559,6 @@ pipeline {
                 }
             }
         }
-
-        // stage('Deploy WAR file to JBoss EAP VM (With Rollback & Backup)') {
-        //     steps {
-        //         sshagent(credentials: ['jboss-vm-ssh-key']) {
-        //             script {
-        //                 try {
-        //                     echo "Creating backup of current deployment on VM..."
-        //                     sh "ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} 'cp /tmp/hercey.war /tmp/hercey.war.bak 2>/dev/null || true'"
-
-        //                     echo "Transferring artifact directly into the VM..."
-        //                     sh "scp -o StrictHostKeyChecking=no ${WAR_PATH} ${VM_USER}@${VM_IP}:/tmp/hercey.war"
-
-        //                     echo "Executing deployment using JBoss CLI..."
-        //                     sh """
-        //                         ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
-        //                         "${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war'"
-        //                     """
-        //                 } catch (Exception e) {
-        //                     echo "WARNING: JBoss VM deployment failed! Restoring backup WAR file..."
-        //                     sh """
-        //                         ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} \
-        //                         "if [ -f /tmp/hercey.war.bak ]; then ${JBOSS_CLI} --connect --controller=${VM_IP}:9990 --command='deploy --force /tmp/hercey.war.bak'; fi"
-        //                     """
-        //                     error "JBoss VM Deployment failed and was rolled back to previous backup: ${e.message}"
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
     }
 
     post {
