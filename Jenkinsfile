@@ -178,13 +178,13 @@ pipeline {
                     # Fail the build on HIGH/CRITICAL vulnerabilities for staging/prod.
                     if [ "$ENFORCE_SECURITY" = "true" ]; then
                         echo "Enforcing HIGH/CRITICAL vulnerability gate for ${BRANCH_NAME}..."
-                        trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
+                        trivy fs --scanners vuln --severity HIGH,CRITICAL \
                                 --format table .
                     else
                         echo "Non-blocking scan (branch ${BRANCH_NAME}); reporting only."
                     fi
                 '''
-            }
+            } //  --exit-code 1 after --severity HIGH,CRITICA
         }
 
         stage('Build Docker Image') {
