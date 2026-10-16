@@ -4,13 +4,11 @@
     "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
 <hibernate-configuration>
   <session-factory>
-      <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
-      <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
-      <property name="hibernate.connection.url">
-          jdbc:mysql://192.168.56.1:3306/hercey?useSSL=false&amp;allowPublicKeyRetrieval=true
-      </property>
-      <property name="hibernate.connection.username">ems</property>
-      <property name="hibernate.connection.password">BuduAmmoRoot@123!</property>
+      <property name="hibernate.connection.driver_class">${DB_DRIVER}</property>
+      <property name="hibernate.dialect">${DB_DIALECT}</property>
+      <property name="hibernate.connection.url">${DB_JDBC_URL}</property>
+      <property name="hibernate.connection.username">${DB_USERNAME}</property>
+      <property name="hibernate.connection.password">${DB_PASSWORD}</property>
       <property name="hibernate.hbm2ddl.auto">update</property>
       <property name="hibernate.show_sql">true</property>
       <property name="hibernate.cache.use_second_level_cache">false</property>
