@@ -365,7 +365,7 @@ Application logic also assumes specific reference rows exist:
 - `hibernate.hbm2ddl.auto=update` is convenient for development but can drift over time; schema migration tooling is recommended for production.
 - Several associations use `CascadeType.ALL` on `ManyToOne` relations (for example in `Order`, `OrderItem`, `Stock`, `Product`, `Seller`). Be careful during deletes/updates to avoid unintended parent writes.
 - `PreparationState` exists as an entity class but is not mapped in `hibernate.cfg.xml`, so Hibernate will not manage/create that table unless mapping is added.
-- Sensitive DB credentials are currently in `hibernate.cfg.xml`; move them to environment-based configuration before production deployment.
+- DB credentials are supplied via environment variables (`hibernate.cfg.xml` uses `${...}` placeholders resolved at runtime by `Env`); no credentials are stored in the repository.
 
 ## 7) Source of Truth
 Primary mapping and schema sources:

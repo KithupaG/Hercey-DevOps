@@ -1,40 +1,233 @@
-# Hercey Application - CI/CD Pipeline
+# Hercey — DevOps & CI/CD Platform
 
-Jenkins CI/CD for the **Hercey JBoss/WildFly application**. Every build produces a versioned
-WAR, packages it into a container image **and** a Helm chart, pushes both to **Harbor**, and
-deploys to Kubernetes with Helm. Harbor (OCI) is the **single source of truth** for both the
-image and the chart.
+![Jenkins](https://img.shields.io/badge/Jenkins-Multibranch-D24939?logo=jenkins&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-K3s-326CE5?logo=kubernetes&logoColor=white)
+![Helm](https://img.shields.io/badge/Helm-OCI-0F1689?logo=helm&logoColor=white)
+![Harbor](https://img.shields.io/badge/Harbor-Registry-60B932?logo=harbor&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Image-2496ED?logo=docker&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-Java%2017-C71A36?logo=apachemaven&logoColor=white)
+![SonarQube](https://img.shields.io/badge/SonarQube-Quality%20Gate-4E9BCD?logo=sonarqube&logoColor=white)
+![Trivy](https://img.shields.io/badge/Trivy-Security-1904DA?logo=aquasecurity&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?logo=mysql&logoColor=white)
+
+> ### Ownership & scope
+> The **Hercey application** (the Java/JBoss e‑commerce backend and its web UI) was built by
+> **[Nimuthu](https://github.com/Nimuthu)**.
+>
+> **Everything DevOps in this repository is my work ([Kithupa G](https://github.com/KithupaG))** —
+> the CI/CD pipeline, containerization, Helm packaging, artifact management, security/quality
+> gates and the multi‑environment deployment platform. This README documents that platform.
+> The application source is included here only because the pipeline builds and ships it.
+
+An end‑to‑end **build → scan → package → deploy** platform for a JBoss/WildFly Java application.
+Every commit flows through a Jenkins multibranch pipeline that produces a versioned WAR, a
+container image **and** a Helm chart, publishes both to **Harbor** (OCI), and deploys to a
+**K3s** cluster and a **JBoss EAP** VM — with secret scanning, static analysis, SBOM and DAST
+wired in along the way.
+
+**Harbor is the single source of truth** for both the image and the chart: CI never deploys from
+a local build context, it deploys the exact artifact that was scanned and published.
 
 ---
 
-## Architecture & Tech Stack
+## My role / DevOps responsibilities
 
-* **CI/CD:** Jenkins (Multibranch Pipeline)
-* **Artifact registry / source of truth:** Harbor (OCI) - container images + Helm charts
-* **Packaging / deployment:** Helm (`helm/hercey`)
-* **Kubernetes platform:** K3s single-node cluster
-* **Application:** JBoss Enterprise / WildFly container (`jboss-app`)
-
----
-
-## Delivery Flow
-
-1. Build the versioned WAR with Maven.
-2. Build the WildFly container image.
-3. Push the image to Harbor: `192.168.56.50/<project>/hercey:<image-tag>`.
-4. Package the Helm chart and push it to Harbor OCI: `oci://192.168.56.50/<project>/charts/hercey:<version>` (a `charts` subpath keeps chart tags separate from image tags).
-5. Deploy from Harbor with `helm upgrade --install` into the environment namespace.
-6. Post-deploy security/health checks (Trivy audit, health test, OWASP ZAP DAST).
+| Area | What I built |
+|------|--------------|
+| **CI/CD** | Jenkins Multibranch Pipeline (`Jenkinsfile`) — one file, branch‑driven environment promotion |
+| **Containerization** | WildFly Dockerfile; image build, tagging and push to Harbor |
+| **Artifact management** | Versioned WAR publishing to Nexus; OCI Helm chart push/pull to/from Harbor |
+| **Packaging & deploy** | Helm chart (`helm/hercey`) and `helm upgrade --install` from Harbor OCI into K3s |
+| **Configuration** | Externalized all secrets to environment variables (`.env` / Kubernetes Secret) |
+| **Security** | TruffleHog secret scan, Trivy filesystem/image/K8s scans, Syft SBOM, OWASP ZAP DAST |
+| **Quality** | SonarQube analysis + blocking quality gate |
+| **Release control** | Manual production approval gate, rollback‑on‑failure, versioned releases |
+| **Legacy VM deploy** | WAR deployment to a JBoss EAP 8 VM over SSH with backup & automatic rollback |
+| **Platforms** | Harbor, Nexus, SonarQube, K3s, JBoss EAP VM provisioned and wired together |
 
 ---
 
-## Repository Structure
+## Architecture
+
+### Delivery pipeline
+
+```mermaid
+flowchart LR
+    A[git push<br/>dev / staging / main] --> B[Jenkins<br/>Multibranch]
+    B --> C[Maven build<br/>versioned WAR]
+    C --> D[Security & quality<br/>TruffleHog · SonarQube]
+    D --> E[Docker image<br/>WildFly + WAR]
+    E --> F[Image scan + SBOM<br/>Trivy · Syft]
+    F --> G[(Harbor 192.168.56.50<br/>images + Helm charts)]
+    C --> H[(Nexus<br/>WAR artifacts)]
+    G --> I[K3s cluster<br/>ns: dev / staging / prod]
+```
+
+### Runtime topology
+
+```mermaid
+flowchart TB
+    subgraph CI[Jenkins]
+        J[Jenkinsfile]
+    end
+
+    subgraph Reg[Registries]
+        HAR[(Harbor<br/>OCI images + charts)]
+        NEX[(Nexus<br/>Maven WAR)]
+        SQ[(SonarQube)]
+    end
+
+    subgraph K8s[K3s cluster]
+        DEV[dev ns :30081]
+        STG[staging ns :30082]
+        PRD[prod ns :30083]
+    end
+
+    VM[JBoss EAP 8 VM<br/>192.168.56.100:8080]
+
+    J --> HAR
+    J --> NEX
+    J --> SQ
+    J --> K8s
+    J --> VM
+```
+
+---
+
+## Tech stack
+
+| Layer | Tooling |
+|-------|---------|
+| CI server | Jenkins (Multibranch Pipeline), Maven toolchain, NodeJS 20.x |
+| Application build | Maven 3, Java 17, packaged as `hercey.war` |
+| Container | Docker, WildFly (`quay.io/wildfly/wildfly`) |
+| Registry / source of truth | **Harbor** `192.168.56.50` (images + Helm charts via OCI) |
+| Artifact repo | **Nexus** `host.docker.internal:8081` (`hercey-dev` / `hercey-staging` / `hercey-releases`) |
+| Code quality | **SonarQube** (analysis + quality gate) |
+| Security scanning | **TruffleHog**, **Trivy** (fs, image, Kubernetes), **Syft** (SBOM), **OWASP ZAP** (DAST) |
+| Packaging & deploy | **Helm** (`helm/hercey`), `helm upgrade --install` from Harbor OCI |
+| Orchestration | **K3s** single‑node cluster |
+| Legacy runtime | **JBoss EAP 8** on a dedicated VM, deployed over SSH via `jboss-cli.sh` |
+| Database | MySQL |
+| App frameworks | Hibernate ORM 6, Jersey (JAX‑RS), Jakarta Mail, static HTML/JS web UI |
+
+---
+
+## CI/CD pipeline
+
+Defined in [`Jenkinsfile`](Jenkinsfile). A single pipeline runs on all branches; the branch name
+selects the target environment automatically (`Load environment config` stage), so promoting
+`dev → staging → main` never changes behaviour or credentials by accident.
+
+| # | Stage | Purpose | dev | staging | main |
+|---|-------|---------|:---:|:-------:|:----:|
+| 1 | Load environment config | Branch → env, versions, registry/creds mapping | ✓ | ✓ | ✓ |
+| 2 | Checkout Source Code | `checkout scm` | ✓ | ✓ | ✓ |
+| 3 | Secret Scanning (TruffleHog) | Detect leaked credentials (custom detectors) | ✓ | ✓ | ✓ |
+| 4 | SonarQube Analysis | Static analysis | ✓ | ✓ | ✓ |
+| 5 | SonarQube Quality Gate | Block on failed gate (enforced for stg/prod) | ✓ | ✓ | ✓ |
+| 6 | Build WAR (dynamic versioning) | `mvn package` with pipeline version | ✓ | ✓ | ✓ |
+| 7 | Trivy Security Scan | Filesystem vuln/misconfig/secret/license + SBOM | ✓ | ✓ | ✓ |
+| 8 | Build Docker Image | WildFly + WAR | ✓ | ✓ | ✓ |
+| 9 | Image Scan & SBOM | Trivy image scan + Syft SBOM | ✓ | ✓ | ✓ |
+| 10 | Approve production release | Manual password gate | — | — | ✓ |
+| 11 | Publish Artifact to Nexus | Upload versioned WAR | ✓ | ✓ | ✓ |
+| 12 | Push image to Harbor | Push image, per‑env robot account | ✓ | ✓ | ✓ |
+| 13 | Package & Push Helm chart to Harbor | `helm package` + `helm push` (OCI) | — | ✓ | ✓ |
+| 14 | Deploy with Helm | `helm upgrade --install` from Harbor, rollback on failure | — | ✓ | ✓ |
+| 15 | Trivy Kubernetes Audit | Post‑deploy cluster audit (HTML report) | — | ✓ | ✓ |
+| 16 | Wait for App Readiness | Poll `/health` before DAST | — | ✓ | ✓ |
+| 17 | Deploy WAR to JBoss EAP VM | SSH deploy with backup + automatic rollback | — | ✓ | ✓ |
+| 18 | DAST Security Scan (OWASP ZAP) | Baseline scan against the live app | — | ✓ | ✓ |
+
+**Behaviour by branch**
+
+* **`dev`** — builds, scans and publishes artifacts (Nexus + Harbor image). No deploy.
+* **`staging` / `main`** — fully deploys, audits, health‑checks and DAST‑scans.
+* **`main` (production)** — requires a manual approval before publishing.
+
+### Versioning
+
+`MAJOR_MINOR` is fixed at `1.0`; the build number supplies the patch:
+
+| Branch | Maven version | Image tag | Chart version |
+|--------|---------------|-----------|---------------|
+| dev | `1.0.<build>-SNAPSHOT` | `dev-1.0.<build>` | — |
+| staging | `1.0.<build>-rc` | `staging-1.0.<build>` | `1.0.<build>-rc` |
+| main | `1.0.<build>` | `1.0.<build>` | `1.0.<build>` |
+
+---
+
+## Environments
+
+| Branch | Kubernetes namespace | Harbor project | NodePort | Deploys? |
+|--------|----------------------|----------------|:--------:|----------|
+| `dev` | `dev` | `hercey-dev` | 30081 | artifacts only |
+| `staging` | `staging` | `hercey-staging` | 30082 | automatic |
+| `main` | `prod` | `hercey` | 30083 | automatic (after approval) |
+
+Each environment gets its own namespace, Harbor project/robot account, Nexus repo, SonarQube
+project key and NodePort — all selected from the branch.
+
+---
+
+## Security & quality gates
+
+* **TruffleHog** — scans the repository with custom detectors for XML/properties password
+  patterns; report rendered to HTML via [`scripts/generate_trufflehog_report.py`](scripts/generate_trufflehog_report.py).
+* **SonarQube** — analysis runs on every branch; the **quality gate is blocking** for
+  `staging`/`main` and non‑blocking (unstable) for `dev`.
+* **Trivy** — filesystem scan (vuln, misconfig, secret, license), container image scan and a
+  post‑deploy Kubernetes audit. Accepted findings are documented in [`.trivyignore`](.trivyignore).
+* **Syft** — generates CycloneDX SBOMs for the built image.
+* **OWASP ZAP** — baseline DAST against the running app after a health check passes.
+* Trivy high/critical enforcement is currently **advisory** (report‑only, exit codes are
+  intentionally disabled so the pipeline keeps shipping while the vulnerability baseline is
+  triaged and can be re‑enabled later).
+
+All reports (Trivy, SBOM, TruffleHog, ZAP) are published as Jenkins HTML reports and archived
+as build artifacts.
+
+---
+
+## Configuration & secrets
+
+No credentials live in the source tree. The application reads mail and database settings from
+**environment variables** at runtime: `Env` resolves `${VAR}` placeholders in
+[`app.properties`](src/main/resources/app.properties) and
+[`hibernate.cfg.xml`](src/main/resources/hibernate.cfg.xml). A local `.env` file is used for
+development (see [`.env.example`](.env.example)); the chart injects the same variables into the
+pod.
+
+```bash
+# Local development
+cp .env.example .env      # then fill in real values
+
+# Kubernetes: create a Secret from the env file, then point the chart at it
+kubectl create secret generic hercey-env --from-env-file=.env -n <env> \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+helm upgrade --install jboss-app oci://192.168.56.50/<project>/charts/hercey \
+  --namespace <env> --set envFrom[0].secretRef.name=hercey-env
+```
+
+The chart maps `values.env` (plain key/value) to container `env:` and `values.envFrom` to
+container `envFrom:`. See the [Helm chart](helm/hercey) for details.
+
+**Jenkins credentials required** (IDs referenced by the pipeline): `jenkins-dev-robot`,
+`jenkins-staging-robot`, `jenkins-robot` (Harbor robots), `nexus-credentials`, `k8s-kubeconfig`,
+`jboss-vm-ssh-key`, `prod-approval-secret`.
+
+---
+
+## Repository structure
 
 ```text
 .
-├── Jenkinsfile                 # Multibranch pipeline definition
+├── Jenkinsfile                 # Multibranch pipeline definition (the heart of the platform)
 ├── Dockerfile                  # WildFly image build
 ├── pom.xml                     # Maven WAR build
+├── .env.example                # Required runtime environment variables (no secrets)
 ├── helm/
 │   └── hercey/                 # Helm chart SOURCE (packaged + pushed to Harbor by CI)
 │       ├── Chart.yaml
@@ -47,64 +240,21 @@ image and the chart.
 │   ├── hercey-<version>.tgz    # Exact OCI artifacts
 │   └── extracted/<version>/    # Unpacked charts for review
 ├── archive/                    # Retired/earlier assets recovered from outside the repo
-│   ├── k8s-fleet-config/       # Old Fleet + Kustomize GitOps manifests
+│   ├── k8s-fleet-config/       # Old Rancher Fleet + Kustomize GitOps manifests
 │   └── jboss-container/        # Old standalone JBoss EAP image build
-├── scripts/                    # Pipeline helper scripts (TruffleHog report)
+├── scripts/                    # Pipeline helper scripts (TruffleHog HTML report)
 ├── templates/                  # Trivy HTML report template
-├── Docs/                       # App/domain documentation
-├── trufflehog-config.yaml      # Secret-scan config
-├── .trivyignore                # Known/accepted findings
-└── src/                        # Application source
+├── Docs/                       # Application documentation (see below)
+├── trufflehog-config.yaml      # Custom secret-scan detectors
+├── .trivyignore                # Accepted/ignored vulnerabilities
+└── src/                        # Application source (built by the pipeline)
 ```
 
 ---
 
-## Environments
+## Deploy & rollback
 
-The branch selects the environment automatically (see the `Load environment config` stage):
-
-| Branch    | Namespace | Harbor project  | Image tag          | NodePort |
-|-----------|-----------|-----------------|--------------------|----------|
-| `dev`     | `dev`     | `hercey-dev`    | `dev-1.0.<build>`  | 30081    |
-| `staging` | `staging` | `hercey-staging`| `staging-1.0.<build>` | 30082 |
-| `main`    | `prod`    | `hercey`        | `1.0.<build>`      | 30083    |
-
-`staging` and `main` deploy automatically; `dev` builds and pushes artifacts only.
-
----
-
-## Configuration & Secrets
-
-The application reads all mail and database settings from **environment variables** at
-runtime (`Env` resolves `${VAR}` placeholders in `app.properties` and `hibernate.cfg.xml`).
-No credentials are stored in the source tree; a local `.env` is used for development
-(see `.env.example`).
-
-For Kubernetes, provide the variables to the pod. The chart maps `values.env`
-(non-sensitive, key/value) to container `env:` and `values.envFrom` to container `envFrom:`.
-The recommended way is a Secret built from an env file:
-
-```bash
-kubectl create secret generic hercey-env --from-env-file=.env -n <env> --dry-run=client -o yaml | kubectl apply -f -
-
-helm upgrade --install jboss-app oci://192.168.56.50/<project>/charts/hercey \
-  --namespace <env> \
-  --set envFrom[0].secretRef.name=hercey-env
-```
-
-Non-sensitive settings can be passed directly:
-
-```bash
-helm upgrade --install jboss-app oci://192.168.56.50/<project>/charts/hercey \
-  --namespace <env> \
-  --set env.APP_NAME=hercey --set env.APP_URL=http://<node-ip>:<nodePort>/hercey
-```
-
----
-
-## Deploy & Rollback
-
-Jenkins performs the deploy from Harbor, for example:
+Jenkins deploys the published chart from Harbor (never a local build):
 
 ```bash
 helm upgrade --install jboss-app \
@@ -117,45 +267,65 @@ helm upgrade --install jboss-app \
   --plain-http --wait --rollback-on-failure --take-ownership --force-conflicts
 ```
 
-Roll back a release:
+`--rollback-on-failure` reverts automatically if the release doesn't become healthy. Manual
+rollback:
 
 ```bash
+helm history  jboss-app -n <env>
 helm rollback jboss-app -n <env>
-helm history jboss-app -n <env>
 ```
+
+The JBoss EAP VM path deploys the WAR over SSH (`scp` + `jboss-cli.sh deploy --force`),
+backing up the current WAR first and restoring it automatically if the deploy fails.
 
 ---
 
-## Harbor chart archive (`harbor-charts/`)
-
-Harbor is the source of truth for packaged charts, so every published chart is also
-vendored into this repository for review:
+## Local development
 
 ```bash
-helm pull oci://192.168.56.50/hercey/charts/hercey --version 1.0.4 --plain-http -d harbor-charts
-helm template jboss-app harbor-charts/hercey-1.0.4.tgz
+# 1. Provide configuration
+cp .env.example .env        # fill in DB + mail settings
+
+# 2. Build
+mvn clean package           # produces target/hercey.war
+
+# 3. Run (embedded Tomcat)
+#    starts at http://localhost:8080/hercey
+mvn compile exec:java -Dexec.mainClass=com.hercey.Main
 ```
 
-See [`harbor-charts/INDEX.md`](harbor-charts/INDEX.md) for the full catalog (versions,
-digests, push dates). The unpacked chart is identical to the source in `helm/hercey`.
+Requires Java 17 and a reachable MySQL instance (see the `.env` variables).
 
 ---
 
-## Archive (`archive/`)
+## Platform history — how this evolved
 
-Retired/earlier assets recovered from outside this repository, kept for reference:
+This repo is also a record of the deployment approaches I moved through:
 
-* **`archive/k8s-fleet-config/`** - the old Rancher Fleet + Kustomize GitOps manifests
-  (per-env overlays with the same NodePorts as today).
-* **`archive/jboss-container/`** - the earlier standalone JBoss EAP image build and a
-  hand-written Kubernetes manifest.
+1. **Rancher Fleet + Kustomize GitOps** — deployment driven by a separate GitOps repo
+   (`K8S-Fleet-Deployment-Repo`) with per‑env Kustomize overlays. Preserved in
+   [`archive/k8s-fleet-config/`](archive/k8s-fleet-config/).
+2. **Helm from Harbor OCI (current)** — Harbor holds both image and chart; Jenkins deploys the
+   exact scanned artifacts with `helm upgrade --install`, removing the separate GitOps hop.
 
-See [`archive/README.md`](archive/README.md) for provenance.
+Packaged charts published to Harbor are vendored into [`harbor-charts/`](harbor-charts) with a
+full catalog in [`harbor-charts/INDEX.md`](harbor-charts/INDEX.md).
 
 ---
 
-## Retired
+## Application documentation
 
-Rancher Fleet and the `K8S-Fleet-Deployment-Repo` GitOps repository are retired. Deployment is
-now driven directly by Jenkins using Helm, pulling both the image and the chart from Harbor.
-A copy of the retired GitOps manifests is preserved in [`archive/k8s-fleet-config/`](archive/k8s-fleet-config/).
+The application itself is documented separately (originally by its author):
+
+* [`Docs/backend-api.md`](Docs/backend-api.md) — REST API reference
+* [`Docs/database-hibernate.md`](Docs/database-hibernate.md) — schema and Hibernate mappings
+* [`Docs/role-based-workflows.md`](Docs/role-based-workflows.md) — customer/seller/admin flows
+
+---
+
+## Credits
+
+* **Application (Java/JBoss backend & web UI):** [Nimuthu](https://github.com/Nimuthu)
+* **DevOps, CI/CD & platform (this repository's focus):** [Kithupa G](https://github.com/KithupaG)
+
+Repository: <https://github.com/KithupaG/Hercey-DevOps>
