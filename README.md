@@ -73,6 +73,35 @@ The branch selects the environment automatically (see the `Load environment conf
 
 ---
 
+## Configuration & Secrets
+
+The application reads all mail and database settings from **environment variables** at
+runtime (`Env` resolves `${VAR}` placeholders in `app.properties` and `hibernate.cfg.xml`).
+No credentials are stored in the source tree; a local `.env` is used for development
+(see `.env.example`).
+
+For Kubernetes, provide the variables to the pod. The chart maps `values.env`
+(non-sensitive, key/value) to container `env:` and `values.envFrom` to container `envFrom:`.
+The recommended way is a Secret built from an env file:
+
+```bash
+kubectl create secret generic hercey-env --from-env-file=.env -n <env> --dry-run=client -o yaml | kubectl apply -f -
+
+helm upgrade --install jboss-app oci://192.168.56.50/<project>/charts/hercey \
+  --namespace <env> \
+  --set envFrom[0].secretRef.name=hercey-env
+```
+
+Non-sensitive settings can be passed directly:
+
+```bash
+helm upgrade --install jboss-app oci://192.168.56.50/<project>/charts/hercey \
+  --namespace <env> \
+  --set env.APP_NAME=hercey --set env.APP_URL=http://<node-ip>:<nodePort>/hercey
+```
+
+---
+
 ## Deploy & Rollback
 
 Jenkins performs the deploy from Harbor, for example:
