@@ -283,49 +283,93 @@ backing up the current WAR first and restoring it automatically if the deploy fa
 ## Local development
 
 ```bash
-# 1. Provide configuration
-cp .env.example .env        # fill in DB + mail settings
+# Kubernetes Fleet GitOps Deployment Repository
 
-# 2. Build
-mvn clean package           # produces target/hercey.war
+This repository implements a GitOps-based deployment pipeline for the **JBoss Application (`jboss-app`)** using **Rancher Fleet**, **Kustomize**, and **K3s**. It manages multi-environment deployments (`staging` and `prod`) from a single centralized repository.
 
-# 3. Run (embedded Tomcat)
-#    starts at http://localhost:8080/hercey
-mvn compile exec:java -Dexec.mainClass=com.hercey.Main
+---
+
+## Architecture & Tech Stack
+
+* **Orchestration / GitOps:** Rancher Fleet (`fleet.yaml`)
+* **Configuration Management:** Kustomize (Base and Environment Overlays)
+* **Kubernetes Platform:** K3s Single-Node Cluster
+* **Application:** JBoss Enterprise / WildFly Container (`jboss-app`)
+
+---
+
+## Repository Structure
+
+```text
+.
+├── apps/
+│   └── jboss-app/
+│       ├── fleet.yaml               # Fleet multi-target configuration
+│       ├── base/                    # Shared Kubernetes manifests
+│       │   ├── deployment.yaml
+│       │   ├── service.yaml
+│       │   └── kustomization.yaml
+│       └── overlays/                # Environment-specific configurations
+│           ├── staging/
+│           │   └── kustomization.yaml
+│           └── prod/
+│               └── kustomization.yaml
 ```
 
-Requires Java 17 and a reachable MySQL instance (see the `.env` variables).
+---
+
+## Fleet Target Configuration (`fleet.yaml`)
+
+Fleet uses `targetCustomizationMode: AllMatches` to evaluate both staging and production targets concurrently against the cluster labels:
+
+```yaml
+targetCustomizationMode: AllMatches
+targetCustomizations:
+  - name: staging
+    clusterSelector:
+      matchLabels:
+        staging-env: "true"
+    kustomize:
+      dir: overlays/staging
+    namespace: staging
+
+  - name: prod
+    clusterSelector:
+      matchLabels:
+        prod-env: "true"
+    kustomize:
+      dir: overlays/prod
+    namespace: prod
+```
 
 ---
 
-## Platform history — how this evolved
+## Cluster Prerequisites & Labeling
 
-This repo is also a record of the deployment approaches I moved through:
+For Fleet to successfully target and deploy resources to your K3s cluster, ensure the cluster object in the `fleet-local` namespace is properly labeled with both environment flags:
 
-1. **Rancher Fleet + Kustomize GitOps** — deployment driven by a separate GitOps repo
-   (`K8S-Fleet-Deployment-Repo`) with per‑env Kustomize overlays. Preserved in
-   [`archive/k8s-fleet-config/`](archive/k8s-fleet-config/).
-2. **Helm from Harbor OCI (current)** — Harbor holds both image and chart; Jenkins deploys the
-   exact scanned artifacts with `helm upgrade --install`, removing the separate GitOps hop.
+```bash
+kubectl label clusters.fleet.cattle.io local staging-env=true prod-env=true -n fleet-local --overwrite
+```
 
-Packaged charts published to Harbor are vendored into [`harbor-charts/`](harbor-charts) with a
-full catalog in [`harbor-charts/INDEX.md`](harbor-charts/INDEX.md).
-
----
-
-## Application documentation
-
-The application itself is documented separately (originally by its author):
-
-* [`Docs/backend-api.md`](Docs/backend-api.md) — REST API reference
-* [`Docs/database-hibernate.md`](Docs/database-hibernate.md) — schema and Hibernate mappings
-* [`Docs/role-based-workflows.md`](Docs/role-based-workflows.md) — customer/seller/admin flows
+Verify the labels have been successfully applied:
+```bash
+kubectl get clusters.fleet.cattle.io local -n fleet-local -o jsonpath='{.metadata.labels}'
+```
 
 ---
 
-## Credits
+## Verifying Deployments
 
-* **Application (Java/JBoss backend & web UI):** [Nimuthu](https://github.com/Nimuthu)
-* **DevOps, CI/CD & platform (this repository's focus):** [Kithupa G](https://github.com/KithupaG)
+Once Fleet syncs the repository, you can verify the status of the bundle deployments across your cluster:
 
-Repository: <https://github.com/KithupaG/Hercey-DevOps>
+```bash
+kubectl get bundledeployments -A | grep hercey-k8s-deployment
+```
+
+Check that the pods and deployments are running successfully in both namespaces:
+
+```bash
+kubectl get deploy,pods -n staging
+kubectl get deploy,pods -n prod
+```
