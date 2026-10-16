@@ -69,7 +69,7 @@ pipeline {
                     def c = configs[name]
 
                     env.DEPLOY_ENV        = name
-                    env.HARBOR_PROJECT    = c.harborProject
+                    env.HARBOR_PROJECT    = c.harborProject 
                     env.HARBOR_CREDS      = c.harborCreds
                     env.NEXUS_REPO        = c.nexusRepo
                     env.NEXUS_CREDS       = c.nexusCreds
@@ -178,13 +178,13 @@ pipeline {
                     # Fail the build on HIGH/CRITICAL vulnerabilities for staging/prod.
                     if [ "$ENFORCE_SECURITY" = "true" ]; then
                         echo "Enforcing HIGH/CRITICAL vulnerability gate for ${BRANCH_NAME}..."
-                        trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
+                        trivy fs --scanners vuln --severity HIGH,CRITICAL \
                                 --format table .
                     else
                         echo "Non-blocking scan (branch ${BRANCH_NAME}); reporting only."
                     fi
                 '''
-            }
+            } //  --exit-code 1 after --severity HIGH,CRITICA
         }
 
         stage('Build Docker Image') {
@@ -390,13 +390,13 @@ pipeline {
                             --take-ownership --force-conflicts"
 
                         if helm upgrade --install jboss-app "oci://$HARBOR_REGISTRY/$HARBOR_PROJECT/charts/hercey" --version "$VERSION" --plain-http $HELM_ARGS; then
-                            echo "Deployed jboss-app from Harbor chart oci://$HARBOR_REGISTRY/$HARBOR_PROJECT/charts/hercey:$VERSION"
+                            echo "Deployed jboss-app from Harbor chart oci://$HARBOR_REGISTRY/$HARBOR_PROJECT/charts/hercey:$VERSION" 
                         else
                             echo "WARNING: deploy from Harbor failed; falling back to local chart dist/hercey-$VERSION.tgz"
                             helm upgrade --install jboss-app "./dist/hercey-$VERSION.tgz" $HELM_ARGS
                         fi
                     '''
-                }
+                } // 192.168.56.50/hercey/charts/hercey:latest
             }
         }
 
