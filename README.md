@@ -36,12 +36,24 @@ image and the chart.
 ├── Dockerfile                  # WildFly image build
 ├── pom.xml                     # Maven WAR build
 ├── helm/
-│   └── hercey/                 # Helm chart (single source of truth in Harbor)
+│   └── hercey/                 # Helm chart SOURCE (packaged + pushed to Harbor by CI)
 │       ├── Chart.yaml
 │       ├── values.yaml
 │       └── templates/
 │           ├── deployment.yaml
 │           └── service.yaml
+├── harbor-charts/              # Charts PULLED from Harbor OCI (packaged artifacts)
+│   ├── INDEX.md                # Catalog: versions, digests, push dates
+│   ├── hercey-<version>.tgz    # Exact OCI artifacts
+│   └── extracted/<version>/    # Unpacked charts for review
+├── archive/                    # Retired/earlier assets recovered from outside the repo
+│   ├── k8s-fleet-config/       # Old Fleet + Kustomize GitOps manifests
+│   └── jboss-container/        # Old standalone JBoss EAP image build
+├── scripts/                    # Pipeline helper scripts (TruffleHog report)
+├── templates/                  # Trivy HTML report template
+├── Docs/                       # App/domain documentation
+├── trufflehog-config.yaml      # Secret-scan config
+├── .trivyignore                # Known/accepted findings
 └── src/                        # Application source
 ```
 
@@ -85,7 +97,36 @@ helm history jboss-app -n <env>
 
 ---
 
+## Harbor chart archive (`harbor-charts/`)
+
+Harbor is the source of truth for packaged charts, so every published chart is also
+vendored into this repository for review:
+
+```bash
+helm pull oci://192.168.56.50/hercey/charts/hercey --version 1.0.4 --plain-http -d harbor-charts
+helm template jboss-app harbor-charts/hercey-1.0.4.tgz
+```
+
+See [`harbor-charts/INDEX.md`](harbor-charts/INDEX.md) for the full catalog (versions,
+digests, push dates). The unpacked chart is identical to the source in `helm/hercey`.
+
+---
+
+## Archive (`archive/`)
+
+Retired/earlier assets recovered from outside this repository, kept for reference:
+
+* **`archive/k8s-fleet-config/`** - the old Rancher Fleet + Kustomize GitOps manifests
+  (per-env overlays with the same NodePorts as today).
+* **`archive/jboss-container/`** - the earlier standalone JBoss EAP image build and a
+  hand-written Kubernetes manifest.
+
+See [`archive/README.md`](archive/README.md) for provenance.
+
+---
+
 ## Retired
 
 Rancher Fleet and the `K8S-Fleet-Deployment-Repo` GitOps repository are retired. Deployment is
 now driven directly by Jenkins using Helm, pulling both the image and the chart from Harbor.
+A copy of the retired GitOps manifests is preserved in [`archive/k8s-fleet-config/`](archive/k8s-fleet-config/).

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jboss-app
+  labels:
+    app: jboss-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jboss-app
+  template:
+    metadata:
+      labels:
+        app: jboss-app
+    spec:
+      containers:
+        - name: jboss-app
+          image: 192.168.56.50/hercey/jboss-app:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
