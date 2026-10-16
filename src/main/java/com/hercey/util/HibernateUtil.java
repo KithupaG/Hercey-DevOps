@@ -4,6 +4,9 @@ import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
+import java.util.HashSet;
+import java.util.Properties;
+
 public class HibernateUtil {
 
     private static final SessionFactory sessionFactory;
@@ -12,7 +15,13 @@ public class HibernateUtil {
 
         try {
 
-            sessionFactory = new Configuration().configure().buildSessionFactory();
+            Configuration configuration = new Configuration().configure();
+            Properties properties = configuration.getProperties();
+            for (String name : new HashSet<>(properties.stringPropertyNames())) {
+                properties.setProperty(name, Env.resolve(properties.getProperty(name)));
+            }
+
+            sessionFactory = configuration.buildSessionFactory();
 
         } catch (HibernateException e) {
             e.printStackTrace();
