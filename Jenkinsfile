@@ -69,7 +69,7 @@ pipeline {
                     def c = configs[name]
 
                     env.DEPLOY_ENV        = name
-                    env.HARBOR_PROJECT    = c.harborProject
+                    env.HARBOR_PROJECT    = c.harborProject 
                     env.HARBOR_CREDS      = c.harborCreds
                     env.NEXUS_REPO        = c.nexusRepo
                     env.NEXUS_CREDS       = c.nexusCreds
@@ -396,7 +396,7 @@ pipeline {
                             helm upgrade --install jboss-app "./dist/hercey-$VERSION.tgz" $HELM_ARGS
                         fi
                     '''
-                }
+                } // 192.168.56.50/hercey/charts/hercey:latest
             }
         }
 
